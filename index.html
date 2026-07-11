@@ -178,6 +178,14 @@ a.chip:hover{filter:brightness(1.2)}
 .sort-chip:hover{border-color:var(--gold)}
 .sort-chip.active{border-color:var(--gold);color:var(--gold)}
 
+/* newly-streamable celebration badge */
+.new-badge{
+  display:inline-block;font-size:10px;font-weight:800;letter-spacing:1px;
+  padding:4px 10px;border-radius:99px;text-transform:uppercase;
+  background:rgba(123,175,140,.16);border:1px solid var(--green);color:var(--green);
+  margin-top:8px;
+}
+
 /* external score chips (OMDb) */
 .score-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .score-chip{
@@ -967,7 +975,12 @@ function maybeRefreshProviders(entry, force){
   return tmdb('/'+entry.type+'/'+entry.id+'/watch/providers').then(function(d){
     var us = (d.results && d.results.US) || {};
     function names(arr){ return (arr||[]).map(function(p){ return p.provider_name; }); }
+    var hadStream = !!(entry.providers && entry.providers.stream && entry.providers.stream.length);
     entry.providers = { stream: names(us.flatrate), rent: names(us.rent), buy: names(us.buy) };
+    // a title just landed on a streaming service — flag it so the UI can celebrate
+    if(!hadStream && entry.providers.stream.length && entry.providersCheckedAt){
+      entry.streamNewAt = now;
+    }
     entry.providersCheckedAt = now;
     saveLib();
   }).catch(function(){ /* leave stale providers in place */ });
@@ -1187,8 +1200,14 @@ function releaseLabel(entry){
   if(entry.releaseDate){
     var f = fmtDate(entry.releaseDate);
     if(f){
-      var future = new Date(entry.releaseDate + 'T00:00:00') > new Date();
-      return (future ? 'Coming ' : 'Released ') + f;
+      var when = new Date(entry.releaseDate + 'T00:00:00');
+      if(when > new Date()){
+        var days = Math.ceil((when - new Date()) / 864e5);
+        if(days === 1) return 'Coming tomorrow';
+        if(days <= 120) return 'Coming in ' + days + ' days';
+        return 'Coming ' + f;
+      }
+      return 'Released ' + f;
     }
   }
   if(entry.year) return 'Released ' + entry.year;
@@ -1231,6 +1250,18 @@ function renderPane(){
     }
     items.forEach(function(e){ app.appendChild(ticketCard(e)); });
     return;
+  }
+
+  if(state.tab === 'wishlist'){
+    // upcoming releases first (soonest on top), everything else by recently added
+    var today = new Date();
+    items.sort(function(a,b){
+      var fa = !!(a.releaseDate && new Date(a.releaseDate+'T00:00:00') > today);
+      var fb = !!(b.releaseDate && new Date(b.releaseDate+'T00:00:00') > today);
+      if(fa !== fb) return fa ? -1 : 1;
+      if(fa && fb) return a.releaseDate.localeCompare(b.releaseDate);
+      return (b.addedAt||0)-(a.addedAt||0);
+    });
   }
 
   var grid = el('div','grid');
@@ -1284,6 +1315,9 @@ function titleCard(entry){
 
   // wishlist: show live providers
   if(entry.status==='wishlist'){
+    if(entry.streamNewAt && (Date.now()-entry.streamNewAt) < 7*864e5 && (entry.providers && entry.providers.stream || []).length){
+      meta.appendChild(el('div','new-badge', 'New on ' + entry.providers.stream[0]));
+    }
     var chips = providerChips(entry, 'all', 3);
     if(chips){ chips.style.marginTop='8px'; meta.appendChild(chips); }
     else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent=releaseLabel(entry); meta.appendChild(none); }
