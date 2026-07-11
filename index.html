@@ -271,7 +271,8 @@ a.chip:hover{filter:brightness(1.2)}
   border-right:2px dashed var(--velvet);padding:14px 8px;
 }
 .ticket .stub .admit{font-size:9px;letter-spacing:2px;writing-mode:vertical-rl;transform:rotate(180deg);opacity:.85}
-.ticket .stub .stars{font-size:14px;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg);color:#F5D98A}
+.ticket .stub .stars{font-size:18px;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg);color:#F5D98A}
+.ticket .stub .stars .sempty{opacity:.38}
 .ticket .body{padding:16px 18px;flex:1;min-width:0}
 .ticket .body .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .ticket h3{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;font-weight:800;font-size:18px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
@@ -1215,9 +1216,14 @@ function drawTicket(entry){
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle='rgba(243,233,215,0.9)'; ctx.font='700 12px "Libre Franklin", sans-serif';
   setLS(ctx,'3px'); ctx.fillText('ADMIT ONE', 0, -18); setLS(ctx,'0px');
-  var starStr=''; for(var s=0;s<5;s++) starStr += (s < (entry.rating||0)) ? '★' : '☆';
-  ctx.fillStyle='#F5D98A'; ctx.font='15px sans-serif';
-  setLS(ctx,'2px'); ctx.fillText(starStr, 0, 10); setLS(ctx,'0px');
+  var rN = Math.max(0, Math.min(5, entry.rating||0));
+  ctx.font='20px sans-serif'; setLS(ctx,'0px');
+  var sgap = 22;
+  for(var s=0;s<5;s++){
+    var on = s < rN;
+    ctx.fillStyle = on ? '#F5D98A' : 'rgba(245,217,138,0.38)';
+    ctx.fillText(on ? '★' : '☆', (2-s)*sgap, 12);
+  }
   ctx.restore();
 
   // body: title
@@ -1320,9 +1326,11 @@ function ticketCard(entry){
   var t = el('div','ticket');
   var stub = el('div','stub');
   stub.appendChild(el('span','admit','ADMIT ONE'));
-  var stars = '';
-  for(var i=0;i<5;i++) stars += (i < (entry.rating||0)) ? '★' : '☆';
-  stub.appendChild(el('span','stars', stars));
+  var rN = Math.max(0, Math.min(5, entry.rating||0));
+  var starsEl = el('span','stars');
+  starsEl.appendChild(el('span','sempty', '☆☆☆☆☆'.slice(0, 5 - rN)));
+  starsEl.appendChild(el('span','sfill', '★★★★★'.slice(0, rN)));
+  stub.appendChild(starsEl);
   t.appendChild(stub);
 
   var body = el('div','body');
