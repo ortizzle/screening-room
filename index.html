@@ -169,6 +169,22 @@ a.chip:hover{filter:brightness(1.2)}
 .tab.active{border-color:var(--gold);color:var(--gold);box-shadow:0 0 14px rgba(217,164,65,.15)}
 .tab .count{opacity:.7;font-size:11px;margin-left:4px}
 
+/* finished sort/filter bar */
+.sortbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 16px}
+.sort-chip{
+  background:#241b18;border:1px solid #6d5347;color:var(--dim);border-radius:99px;
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:6px 13px;
+}
+.sort-chip:hover{border-color:var(--gold)}
+.sort-chip.active{border-color:var(--gold);color:var(--gold)}
+
+/* external score chips (OMDb) */
+.score-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.score-chip{
+  font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 9px;border-radius:99px;
+  background:var(--card-2);border:1px solid var(--line);color:var(--cream);
+}
+
 /* grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
 .title-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;position:relative}
@@ -395,6 +411,20 @@ function detectCred(raw){
   return {type:'v3', value:t};
 }
 
+/* ---------- optional OMDb key (RT / IMDb / Metacritic scores) ---------- */
+var OMDB_STORE = 'sr_omdb_key';
+var omdbKey = null;
+function loadOmdbKey(){
+  try{ return localStorage.getItem(OMDB_STORE) || null; }catch(e){ return null; }
+}
+function saveOmdbKey(k){
+  try{ localStorage.setItem(OMDB_STORE, k); return true; }catch(e){ return false; }
+}
+function clearOmdbKey(){
+  try{ localStorage.removeItem(OMDB_STORE); }catch(e){}
+  omdbKey = null;
+}
+
 /* ---------- TMDB fetch wrapper ---------- */
 function tmdb(path, params){
   params = params || {};
@@ -490,7 +520,7 @@ function notice(text){
 }
 
 /* ---------- view state ---------- */
-var state = { view:'home', tab:'watching', detail:null }; // detail: {type,id}
+var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false }; // detail: {type,id}
 
 /* ========================================================= */
 /* SETUP / SETTINGS SCREEN                                    */
@@ -598,6 +628,70 @@ function renderSetup(isSettings){
     }
 
     box.appendChild(row);
+
+    // optional OMDb key → Rotten Tomatoes / IMDb / Metacritic scores
+    box.appendChild(el('div','divider'));
+    var oHead = el('p');
+    oHead.appendChild(document.createTextNode('Extra ratings (optional): a free '));
+    var oa = el('a', null, 'OMDb key'); oa.href='https://www.omdbapi.com/apikey.aspx'; oa.target='_blank'; oa.rel='noopener';
+    oa.style.color = 'var(--gold)';
+    oHead.appendChild(oa);
+    oHead.appendChild(document.createTextNode(' adds Rotten Tomatoes, IMDb, and Metacritic scores to detail pages.'));
+    box.appendChild(oHead);
+
+    var oField = el('div','field');
+    var oInput = el('input');
+    oInput.type = 'password';
+    oInput.placeholder = omdbKey ? 'OMDb key saved — paste to replace' : 'Paste OMDb API key';
+    oInput.autocomplete = 'off'; oInput.spellcheck = false;
+    oField.appendChild(oInput);
+    var oSave = el('button','primary-btn', omdbKey ? 'Replace' : 'Save');
+    oField.appendChild(oSave);
+    box.appendChild(oField);
+    var oMsg = el('div','msg');
+    box.appendChild(oMsg);
+    function oShow(cls, text){ oMsg.className = 'msg ' + cls; oMsg.textContent = text; }
+
+    on(oSave, 'click', function(){
+      var k = oInput.value.trim();
+      if(!k){ oShow('err','Paste your OMDb key first.'); return; }
+      oSave.disabled = true;
+      oShow('ok','Verifying with OMDb…');
+      fetch('https://www.omdbapi.com/?apikey=' + encodeURIComponent(k) + '&i=tt0111161')
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d && d.Response === 'True'){
+            if(!saveOmdbKey(k)) throw new Error('STORE');
+            omdbKey = k;
+            oShow('ok','Verified. RT / IMDb / Metacritic will appear on detail pages.');
+            oInput.value = '';
+            oSave.disabled = false;
+          }else{ throw new Error('BAD'); }
+        })
+        .catch(function(e){
+          oSave.disabled = false;
+          oShow('err', (e && e.message==='STORE') ? 'Could not write to localStorage.' : 'OMDb rejected that key. Double-check it (activation email link clicked?).');
+        });
+    });
+    on(oInput, 'keydown', function(e){ if(e.key === 'Enter') oSave.click(); });
+
+    if(omdbKey){
+      var oRow = el('div','row');
+      var oClear = el('button','ghost-btn','Clear OMDb key');
+      oClear.dataset.armed = '';
+      on(oClear, 'click', function(){
+        if(oClear.dataset.armed !== '1'){
+          oClear.dataset.armed = '1';
+          oClear.textContent = 'Tap again to clear';
+          return;
+        }
+        clearOmdbKey();
+        notice('OMDb key cleared.');
+        renderSetup(true);
+      });
+      oRow.appendChild(oClear);
+      box.appendChild(oRow);
+    }
   }
 
   app.appendChild(box);
@@ -740,7 +834,8 @@ function searchResultRow(r, panel, input){
   row.appendChild(mid);
   on(row, 'click', function(){
     openAddFlow({
-      id: r.id, type: isTv?'tv':'movie', title:title, year:year, posterPath:r.poster_path||null, tmdbScore: r.vote_average||0
+      id: r.id, type: isTv?'tv':'movie', title:title, year:year, posterPath:r.poster_path||null, tmdbScore: r.vote_average||0,
+      releaseDate: dateStr || null
     }, panel, input);
   });
   return row;
@@ -798,6 +893,7 @@ function addTitle(base, status, panel, input){
     epRatings: base.type==='tv' ? {} : undefined,
     rating: 0, review: '', recommend: null,
     tmdbScore: base.tmdbScore || 0,
+    releaseDate: base.releaseDate || null,
     providers: {stream:[],rent:[],buy:[]}, providersCheckedAt: 0,
     addedAt: Date.now(), finishedAt: status==='finished' ? Date.now() : null
   };
@@ -826,18 +922,21 @@ function addTitle(base, status, panel, input){
 function hydrateEntry(entry){
   var jobs = [];
   // seasons for tv
-  if(entry.type === 'tv' && (!entry.seasons || !entry.seasons.length)){
+  if(entry.type === 'tv' && (!entry.seasons || !entry.seasons.length || !entry.releaseDate)){
     jobs.push(tmdb('/tv/'+entry.id).then(function(d){
-      var seasons = (d.seasons||[]).filter(function(s){ return s.season_number !== 0; })
-        .map(function(s){ return {n:s.season_number, name:s.name, episodeCount:s.episode_count||0, episodes:null}; });
-      entry.seasons = seasons;
+      if(!entry.seasons || !entry.seasons.length){
+        entry.seasons = (d.seasons||[]).filter(function(s){ return s.season_number !== 0; })
+          .map(function(s){ return {n:s.season_number, name:s.name, episodeCount:s.episode_count||0, episodes:null}; });
+      }
       if(!entry.year && d.first_air_date) entry.year = d.first_air_date.slice(0,4);
+      if(!entry.releaseDate && d.first_air_date) entry.releaseDate = d.first_air_date;
       if(d.vote_average) entry.tmdbScore = d.vote_average;
     }).catch(function(){}));
-  }else if(entry.type === 'movie' && (!metaCache[entryKey('movie',entry.id)] || !entry.tmdbScore)){
+  }else if(entry.type === 'movie' && (!metaCache[entryKey('movie',entry.id)] || !entry.tmdbScore || !entry.releaseDate)){
     jobs.push(tmdb('/movie/'+entry.id).then(function(d){
       metaCache[entryKey('movie',entry.id)] = {runtime:d.runtime||0, tagline:d.tagline||''};
       saveMeta();
+      if(!entry.releaseDate && d.release_date) entry.releaseDate = d.release_date;
       if(d.vote_average) entry.tmdbScore = d.vote_average;
     }).catch(function(){}));
   }
@@ -859,6 +958,31 @@ function maybeRefreshProviders(entry, force){
   }).catch(function(){ /* leave stale providers in place */ });
 }
 
+var OMDB_TTL = 7 * 24 * 60 * 60 * 1000;
+function fetchOmdb(entry){
+  if(!omdbKey) return Promise.resolve();
+  if(entry.omdb && entry.omdb.checkedAt && (Date.now() - entry.omdb.checkedAt) < OMDB_TTL) return Promise.resolve();
+  var idJob = (entry.omdb && entry.omdb.imdbId)
+    ? Promise.resolve(entry.omdb.imdbId)
+    : tmdb('/'+entry.type+'/'+entry.id+'/external_ids').then(function(d){ return d.imdb_id || null; });
+  return idJob.then(function(imdbId){
+    if(!imdbId) return;
+    return fetch('https://www.omdbapi.com/?apikey=' + encodeURIComponent(omdbKey) + '&i=' + encodeURIComponent(imdbId))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d || d.Response !== 'True') return;
+        var out = {imdbId: imdbId, checkedAt: Date.now(), imdb: null, rt: null, mc: null};
+        (d.Ratings || []).forEach(function(rt){
+          if(rt.Source === 'Internet Movie Database'){ out.imdb = (rt.Value||'').split('/')[0]; }
+          else if(rt.Source === 'Rotten Tomatoes'){ out.rt = rt.Value || null; }
+          else if(rt.Source === 'Metacritic'){ out.mc = (rt.Value||'').split('/')[0]; }
+        });
+        entry.omdb = out;
+        saveLib();
+      });
+  }).catch(function(){ /* scores are a bonus — fail silently */ });
+}
+
 function loadSeasonEpisodes(entry, season){
   return tmdb('/tv/'+entry.id+'/season/'+season.n).then(function(d){
     season.episodes = (d.episodes||[]).map(function(ep){ return {n:ep.episode_number, name:ep.name||('Episode '+ep.episode_number), score:ep.vote_average||0}; });
@@ -871,8 +995,12 @@ function loadSeasonEpisodes(entry, season){
 /* refresh providers for everything (called on app open), then rerender once */
 function refreshAllProviders(){
   var due = lib.filter(function(e){ return !e.providersCheckedAt || (Date.now()-e.providersCheckedAt) >= PROVIDER_TTL; });
-  if(!due.length) return;
-  Promise.all(due.map(function(e){ return maybeRefreshProviders(e); })).then(function(){
+  // backfill release dates for Waiting titles added before releaseDate existed
+  var needDate = lib.filter(function(e){ return e.status==='wishlist' && !e.releaseDate; });
+  var jobs = due.map(function(e){ return maybeRefreshProviders(e); })
+    .concat(needDate.map(function(e){ return hydrateEntry(e); }));
+  if(!jobs.length) return;
+  Promise.all(jobs).then(function(){
     if(state.view==='home' || state.view==='detail') safeRerender();
   });
 }
@@ -1026,6 +1154,24 @@ function scoreText(v){
   if(!v || v <= 0) return null;
   return 'TMDB ★ ' + (Math.round(v*10)/10).toFixed(1);
 }
+function fmtDate(iso){
+  try{
+    var d = new Date(iso + 'T00:00:00');
+    if(isNaN(d.getTime())) return null;
+    return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+  }catch(e){ return null; }
+}
+function releaseLabel(entry){
+  if(entry.releaseDate){
+    var f = fmtDate(entry.releaseDate);
+    if(f){
+      var future = new Date(entry.releaseDate + 'T00:00:00') > new Date();
+      return (future ? 'Coming ' : 'Released ') + f;
+    }
+  }
+  if(entry.year) return 'Released ' + entry.year;
+  return 'Not streaming yet';
+}
 function renderTabs(){
   var counts = {watching:0, wishlist:0, finished:0};
   lib.forEach(function(e){ if(counts[e.status]!=null) counts[e.status]++; });
@@ -1045,7 +1191,22 @@ function renderPane(){
   if(!items.length){ app.appendChild(emptyState(state.tab)); return; }
 
   if(state.tab === 'finished'){
-    items.sort(function(a,b){ return (b.finishedAt||0)-(a.finishedAt||0); });
+    app.appendChild(finishedSortBar());
+    if(state.finRec){ items = items.filter(function(e){ return e.recommend === true; }); }
+    if(state.finSort === 'top'){
+      items.sort(function(a,b){ return (b.rating||0)-(a.rating||0) || (b.finishedAt||0)-(a.finishedAt||0); });
+    }else if(state.finSort === 'az'){
+      items.sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
+    }else{
+      items.sort(function(a,b){ return (b.finishedAt||0)-(a.finishedAt||0); });
+    }
+    if(!items.length){
+      var e2 = el('div','empty');
+      e2.appendChild(el('b', null, 'No recommended tickets yet.'));
+      e2.appendChild(el('div','', 'Turn a review’s Recommend toggle on and it will show up here.'));
+      app.appendChild(e2);
+      return;
+    }
     items.forEach(function(e){ app.appendChild(ticketCard(e)); });
     return;
   }
@@ -1053,6 +1214,19 @@ function renderPane(){
   var grid = el('div','grid');
   items.forEach(function(e){ grid.appendChild(titleCard(e)); });
   app.appendChild(grid);
+}
+
+function finishedSortBar(){
+  var bar = el('div','sortbar');
+  [['new','Newest'],['top','Top rated'],['az','A–Z']].forEach(function(s){
+    var b = el('button','sort-chip' + (state.finSort===s[0]?' active':''), s[1]);
+    on(b, 'click', function(){ state.finSort = s[0]; rerender(); });
+    bar.appendChild(b);
+  });
+  var rec = el('button','sort-chip' + (state.finRec?' active':''), '👍 Recommended');
+  on(rec, 'click', function(){ state.finRec = !state.finRec; rerender(); });
+  bar.appendChild(rec);
+  return bar;
 }
 
 function emptyState(tab){
@@ -1090,7 +1264,7 @@ function titleCard(entry){
   if(entry.status==='wishlist'){
     var chips = providerChips(entry, 'all', 3);
     if(chips){ chips.style.marginTop='8px'; meta.appendChild(chips); }
-    else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent='Not streaming yet'; meta.appendChild(none); }
+    else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent=releaseLabel(entry); meta.appendChild(none); }
   }
 
   // no action buttons on the card itself — tap the poster to open the detail,
@@ -1373,11 +1547,13 @@ function openDetail(entry){
   window.scrollTo(0,0);
   rerender();
   // ensure metadata present
+  var jobs = [ fetchOmdb(entry) ];
   if(entry.type==='tv' && (!entry.seasons || !entry.seasons.length)){
-    hydrateEntry(entry).then(function(){ if(state.view==='detail') rerender(); });
+    jobs.push(hydrateEntry(entry));
   }else{
-    maybeRefreshProviders(entry).then(function(){ if(state.view==='detail') rerender(); });
+    jobs.push(maybeRefreshProviders(entry));
   }
+  Promise.all(jobs).then(function(){ if(state.view==='detail') safeRerender(); });
 }
 
 function renderDetail(){
@@ -1405,6 +1581,15 @@ function renderDetail(){
   var sc = scoreText(entry.tmdbScore);
   if(sc) subParts.push(sc);
   mid.appendChild(el('div','sub', subParts.join(' · ')));
+
+  // external ratings via OMDb (optional key in Settings)
+  if(entry.omdb && (entry.omdb.rt || entry.omdb.imdb || entry.omdb.mc)){
+    var scores = el('div','score-chips');
+    if(entry.omdb.rt) scores.appendChild(el('span','score-chip', '🍅 RT ' + entry.omdb.rt));
+    if(entry.omdb.imdb) scores.appendChild(el('span','score-chip', 'IMDb ' + entry.omdb.imdb));
+    if(entry.omdb.mc) scores.appendChild(el('span','score-chip', 'Metacritic ' + entry.omdb.mc));
+    mid.appendChild(scores);
+  }
 
   var allChips = providerChips(entry, 'all');
   if(allChips){ allChips.style.marginTop='8px'; mid.appendChild(allChips); }
@@ -1726,6 +1911,7 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
   navigator.serviceWorker.register('sw.js').catch(function(){});
 }
 cred = loadCred();
+omdbKey = loadOmdbKey();
 if(!cred){
   renderSetup(false);
 }else{
