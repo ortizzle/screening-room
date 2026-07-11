@@ -1018,7 +1018,12 @@ function fetchTrailer(entry){
   return tmdb('/'+entry.type+'/'+entry.id+'/videos').then(function(d){
     var vids = (d.results||[]).filter(function(v){ return v.site==='YouTube' && v.key && (v.type==='Trailer' || v.type==='Teaser'); });
     vids.sort(function(a,b){
-      return ((b.type==='Trailer')-(a.type==='Trailer')) || ((b.official===true)-(a.official===true));
+      // prefer official Trailer > Teaser, then the most recently published
+      // (multi-season shows list every season's trailer here — newest wins,
+      // so a returning show points at its latest season, not season 1)
+      return ((b.type==='Trailer')-(a.type==='Trailer'))
+        || ((b.official===true)-(a.official===true))
+        || (new Date(b.published_at||0) - new Date(a.published_at||0));
     });
     if(vids.length) entry.trailerKey = vids[0].key;
     entry.trailerCheckedAt = Date.now();
