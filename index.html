@@ -185,16 +185,22 @@ a.chip:hover{filter:brightness(1.2)}
 .eps{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .ep{
   display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;
-  background:var(--card-2);cursor:pointer;user-select:none;
+  background:var(--card-2);cursor:pointer;user-select:none;flex-wrap:wrap;
 }
 .ep .code{font-size:11px;color:var(--dim);width:52px;font-weight:600;flex-shrink:0}
-.ep .name{flex:1;font-size:13px}
+.ep .name{flex:1 1 130px;font-size:13px;min-width:130px}
 .checkbox{
   width:19px;height:19px;border-radius:50%;border:1.5px solid var(--line);
   display:flex;align-items:center;justify-content:center;font-size:11px;color:#241A0A;flex-shrink:0;
 }
 .ep.seen .checkbox{background:var(--gold);border-color:var(--gold)}
 .ep.seen .name{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--line)}
+.ep-rate{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-left:auto;flex-shrink:0}
+.ep-score{font-size:10px;color:var(--dim);font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.ep-stars{display:flex;gap:1px}
+.ep-star{font-size:16px;line-height:1;color:var(--line);background:none;border:none;padding:0 1px}
+.ep-star.on{color:var(--gold)}
+.ep-star:hover{color:var(--gold);opacity:.85}
 
 /* rating flow */
 .rate-box{border-top:1px dashed var(--line);margin-top:16px;padding-top:16px}
@@ -727,6 +733,7 @@ function addTitle(base, status, panel, input){
     status: status,
     seasons: base.type==='tv' ? [] : undefined,
     watched: base.type==='tv' ? {} : undefined,
+    epRatings: base.type==='tv' ? {} : undefined,
     rating: 0, review: '', recommend: null,
     tmdbScore: base.tmdbScore || 0,
     providers: {stream:[],rent:[],buy:[]}, providersCheckedAt: 0,
@@ -792,7 +799,7 @@ function maybeRefreshProviders(entry, force){
 
 function loadSeasonEpisodes(entry, season){
   return tmdb('/tv/'+entry.id+'/season/'+season.n).then(function(d){
-    season.episodes = (d.episodes||[]).map(function(ep){ return {n:ep.episode_number, name:ep.name||('Episode '+ep.episode_number)}; });
+    season.episodes = (d.episodes||[]).map(function(ep){ return {n:ep.episode_number, name:ep.name||('Episode '+ep.episode_number), score:ep.vote_average||0}; });
     if(!season.episodeCount) season.episodeCount = season.episodes.length;
     saveLib();
     return season.episodes;
@@ -1225,11 +1232,23 @@ function seasonBlock(entry, season){
   var full = season.episodeCount>0 && wc>=season.episodeCount;
 
   var h4 = el('h4', null, season.name || ('Season '+season.n));
-  h4.appendChild(el('span','sub2', ' · ' + wc + '/' + (season.episodeCount||0) + ' watched'));
+  var countSpan = el('span','sub2', ' · ' + wc + '/' + (season.episodeCount||0) + ' watched');
+  h4.appendChild(countSpan);
+  var avgSpan = el('span','sub2');
+  h4.appendChild(avgSpan);
   row.appendChild(h4);
 
   var markBtn = el('button','mark-btn', full ? '✓ Season watched' : 'Mark season');
   block._expanded = false;
+
+  function refreshHeader(){
+    var wc2 = seasonWatchedCount(entry, season);
+    countSpan.textContent = ' · ' + wc2 + '/' + (season.episodeCount||0) + ' watched';
+    var a = seasonAvgRating(entry, season);
+    avgSpan.textContent = a ? ('  ·  ★ ' + a.avg + ' avg') : '';
+    markBtn.textContent = (season.episodeCount>0 && wc2>=season.episodeCount) ? '✓ Season watched' : 'Mark season';
+  }
+  refreshHeader();
 
   on(markBtn, 'click', function(ev){
     ev.stopPropagation();
@@ -1275,19 +1294,46 @@ function seasonBlock(entry, season){
       row2.appendChild(cb);
       row2.appendChild(el('span','code', 'S'+pad2(season.n)+'E'+pad2(ep.n)));
       row2.appendChild(el('span','name', ep.name));
-      on(row2, 'click', function(){
-        var nowSeen = !(entry.watched[key]);
-        entry.watched[key] = nowSeen;
-        if(!nowSeen) delete entry.watched[key];
+
+      function setSeen(nowSeen){
+        if(nowSeen) entry.watched[key] = true; else delete entry.watched[key];
         row2.classList.toggle('seen', nowSeen);
         cb.textContent = nowSeen ? '✓' : '';
         saveLib();
-        // update season counter label
-        var wc2 = seasonWatchedCount(entry, season);
-        h4.lastChild.textContent = ' · ' + wc2 + '/' + (season.episodeCount||0) + ' watched';
-        markBtn.textContent = (season.episodeCount>0 && wc2>=season.episodeCount) ? '✓ Season watched' : 'Mark season';
+        refreshHeader();
         if(nowSeen) maybeFinishPrompt(entry);
-      });
+      }
+      on(row2, 'click', function(){ setSeen(!(entry.watched[key])); });
+
+      // rating cluster (taps here never toggle the watched state)
+      var rate = el('div','ep-rate');
+      on(rate, 'click', function(ev){ ev.stopPropagation(); });
+      if(ep.score){ rate.appendChild(el('div','ep-score', 'TMDB ★ ' + (Math.round(ep.score*10)/10).toFixed(1))); }
+
+      var starsWrap = el('div','ep-stars');
+      var starEls = [];
+      function paint(v){ for(var i=0;i<5;i++){ starEls[i].classList.toggle('on', i<v); } }
+      for(var s=0;s<5;s++){
+        (function(idx){
+          var st = el('button','ep-star','★');
+          st.setAttribute('aria-label', 'Rate '+(idx+1)+' star'+(idx?'s':''));
+          on(st, 'click', function(ev){
+            ev.stopPropagation();
+            var cur = (entry.epRatings && entry.epRatings[key]) || 0;
+            var nv = (cur === idx+1) ? 0 : idx+1;
+            setEpRating(entry, key, nv);
+            paint(nv);
+            if(nv > 0 && !entry.watched[key]) setSeen(true);
+            else refreshHeader();
+          });
+          starsWrap.appendChild(st);
+          starEls.push(st);
+        })(s);
+      }
+      paint((entry.epRatings && entry.epRatings[key]) || 0);
+      rate.appendChild(starsWrap);
+      row2.appendChild(rate);
+
       eps.appendChild(row2);
     });
     epsWrap.appendChild(eps);
@@ -1297,6 +1343,17 @@ function seasonBlock(entry, season){
   return block;
 }
 
+function setEpRating(entry, key, val){
+  if(!entry.epRatings) entry.epRatings = {};
+  if(val > 0){ entry.epRatings[key] = val; }
+  else{ delete entry.epRatings[key]; }
+  saveLib();
+}
+function seasonAvgRating(entry, season){
+  var r = entry.epRatings || {}; var sum = 0, n = 0;
+  for(var i=1;i<=(season.episodeCount||0);i++){ var v = r['s'+season.n+'e'+i]; if(v){ sum += v; n++; } }
+  return n ? {avg: Math.round(sum/n*10)/10, n:n} : null;
+}
 function maybeFinishPrompt(entry){
   if(entry.status==='finished') return;
   var te = totalEpisodes(entry);
