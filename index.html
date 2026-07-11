@@ -1167,7 +1167,7 @@ function drawTicket(entry){
   scratch.font = '400 20px "Libre Franklin", sans-serif';
   var reviewLines = wrapText(scratch, reviewText, bodyW, 10);
   var reviewLH = 28;
-  var recText = entry.recommend===true ? 'RECOMMEND' : (entry.recommend===false ? 'SKIP IT' : '');
+  var recText = entry.recommend===true ? 'RECOMMENDED' : (entry.recommend===false ? 'SKIP IT' : '');
 
   // vertical layout in the body
   var y = M + padY;
@@ -1244,11 +1244,14 @@ function drawTicket(entry){
   reviewLines.forEach(function(line){ ctx.fillText(line, bodyX, ry); ry += reviewLH; });
 
   // meta + brand footer
+  var metaParts = [entry.type==='tv'?'TV':'MOVIE'];
+  if(entry.year) metaParts.push(String(entry.year));
+  if(entry.type==='tv'){ var sn = (entry.seasons||[]).length; if(sn) metaParts.push(sn + ' SEASON' + (sn>1?'S':'')); }
   ctx.fillStyle='#A08D7E'; ctx.font='700 11px "Libre Franklin", sans-serif';
   setLS(ctx,'1.5px');
-  ctx.fillText(((entry.type==='tv'?'TV':'MOVIE') + (entry.year?('  ·  '+entry.year):'')), bodyX, yearBase);
+  ctx.fillText(metaParts.join('  ·  '), bodyX, yearBase);
   ctx.fillStyle='rgba(217,164,65,0.8)'; ctx.textAlign='right';
-  ctx.fillText('SCREENING ROOM', bodyRight, cardY+cardH-16);
+  ctx.fillText('ORTIZZLE SCREENING ROOM', bodyRight, cardY+cardH-16);
   ctx.textAlign='left'; setLS(ctx,'0px');
 
   return canvas;
@@ -1271,9 +1274,9 @@ function ticketShareText(entry){
   var stars=''; for(var i=0;i<5;i++) stars += (i < (entry.rating||0)) ? '★' : '☆';
   var lines = [entry.title + '  ' + stars];
   if(entry.review) lines.push('“' + entry.review + '”');
-  if(entry.recommend===true) lines.push('👍 Recommend');
+  if(entry.recommend===true) lines.push('👍 Recommended');
   else if(entry.recommend===false) lines.push('👎 Skip it');
-  lines.push('— my Screening Room ticket');
+  lines.push('— Ortizzle Screening Room');
   return lines.join('\n');
 }
 function ticketFileName(entry){
@@ -1325,12 +1328,15 @@ function ticketCard(entry){
   var body = el('div','body');
   var top = el('div','top');
   top.appendChild(el('h3', null, entry.title));
-  if(entry.recommend === true){ top.appendChild(el('span','rec','Recommend')); }
+  if(entry.recommend === true){ top.appendChild(el('span','rec','Recommended')); }
   else if(entry.recommend === false){ top.appendChild(el('span','rec no','Skip it')); }
   body.appendChild(top);
   if(entry.review){ body.appendChild(el('p','take', '"'+entry.review+'"')); }
   else{ body.appendChild(el('p','take', 'No note left — the stars say enough.')); }
-  body.appendChild(el('div','yr', (entry.type==='tv'?'TV':'Movie') + (entry.year?(' · '+entry.year):'')));
+  var yrParts = [entry.type==='tv'?'TV':'Movie'];
+  if(entry.year) yrParts.push(String(entry.year));
+  if(entry.type==='tv'){ var ycsn = (entry.seasons||[]).length; if(ycsn) yrParts.push(ycsn + ' Season' + (ycsn>1?'s':'')); }
+  body.appendChild(el('div','yr', yrParts.join(' · ')));
 
   var share = el('button','ticket-share');
   share.appendChild(el('span','share-ico','↗'));
