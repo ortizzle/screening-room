@@ -224,6 +224,7 @@ a.chip:hover{filter:brightness(1.2)}
 .detail-head .poster-mini{width:64px;height:94px}
 .detail-head h2{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;font-weight:800;font-size:24px;color:var(--gold);letter-spacing:.5px;text-transform:uppercase}
 .detail-head .sub{font-size:12px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+.detail-head .crew{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.5}
 .detail-top-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
 .season{border-top:1px dashed var(--line);margin-top:16px;padding-top:14px}
 .season-row{display:flex;align-items:center;gap:12px}
@@ -945,7 +946,7 @@ function addTitle(base, status, panel, input){
 function hydrateEntry(entry){
   var jobs = [];
   // seasons for tv
-  if(entry.type === 'tv' && (!entry.seasons || !entry.seasons.length || !entry.releaseDate)){
+  if(entry.type === 'tv' && (!entry.seasons || !entry.seasons.length || !entry.releaseDate || !entry.genres)){
     jobs.push(tmdb('/tv/'+entry.id).then(function(d){
       if(!entry.seasons || !entry.seasons.length){
         entry.seasons = (d.seasons||[]).filter(function(s){ return s.season_number !== 0; })
@@ -954,13 +955,18 @@ function hydrateEntry(entry){
       if(!entry.year && d.first_air_date) entry.year = d.first_air_date.slice(0,4);
       if(!entry.releaseDate && d.first_air_date) entry.releaseDate = d.first_air_date;
       if(d.vote_average) entry.tmdbScore = d.vote_average;
+      entry.genres = (d.genres||[]).slice(0,3).map(function(g){ return g.name; });
+      if(d.created_by && d.created_by.length) entry.director = d.created_by[0].name;
     }).catch(function(){}));
-  }else if(entry.type === 'movie' && (!metaCache[entryKey('movie',entry.id)] || !entry.tmdbScore || !entry.releaseDate)){
-    jobs.push(tmdb('/movie/'+entry.id).then(function(d){
+  }else if(entry.type === 'movie' && (!metaCache[entryKey('movie',entry.id)] || !entry.tmdbScore || !entry.releaseDate || !entry.genres)){
+    jobs.push(tmdb('/movie/'+entry.id, {append_to_response:'credits'}).then(function(d){
       metaCache[entryKey('movie',entry.id)] = {runtime:d.runtime||0, tagline:d.tagline||''};
       saveMeta();
       if(!entry.releaseDate && d.release_date) entry.releaseDate = d.release_date;
       if(d.vote_average) entry.tmdbScore = d.vote_average;
+      entry.genres = (d.genres||[]).slice(0,3).map(function(g){ return g.name; });
+      var dir = d.credits && (d.credits.crew||[]).filter(function(c){ return c.job==='Director'; })[0];
+      if(dir) entry.director = dir.name;
     }).catch(function(){}));
   }
   jobs.push(maybeRefreshProviders(entry));
@@ -984,6 +990,21 @@ function maybeRefreshProviders(entry, force){
     entry.providersCheckedAt = now;
     saveLib();
   }).catch(function(){ /* leave stale providers in place */ });
+}
+
+var TRAILER_TTL = 7 * 24 * 60 * 60 * 1000;
+function fetchTrailer(entry){
+  if(entry.trailerKey) return Promise.resolve();
+  if(entry.trailerCheckedAt && (Date.now() - entry.trailerCheckedAt) < TRAILER_TTL) return Promise.resolve();
+  return tmdb('/'+entry.type+'/'+entry.id+'/videos').then(function(d){
+    var vids = (d.results||[]).filter(function(v){ return v.site==='YouTube' && v.key && (v.type==='Trailer' || v.type==='Teaser'); });
+    vids.sort(function(a,b){
+      return ((b.type==='Trailer')-(a.type==='Trailer')) || ((b.official===true)-(a.official===true));
+    });
+    if(vids.length) entry.trailerKey = vids[0].key;
+    entry.trailerCheckedAt = Date.now();
+    saveLib();
+  }).catch(function(){});
 }
 
 var OMDB_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -1611,14 +1632,9 @@ function openDetail(entry){
   state.detail = {type:entry.type, id:entry.id};
   window.scrollTo(0,0);
   rerender();
-  // ensure metadata present
-  var jobs = [ fetchOmdb(entry) ];
-  if(entry.type==='tv' && (!entry.seasons || !entry.seasons.length)){
-    jobs.push(hydrateEntry(entry));
-  }else{
-    jobs.push(maybeRefreshProviders(entry));
-  }
-  Promise.all(jobs).then(function(){ if(state.view==='detail') safeRerender(); });
+  // ensure metadata present — each fetcher guards itself (cache/TTL)
+  Promise.all([ fetchOmdb(entry), fetchTrailer(entry), hydrateEntry(entry) ])
+    .then(function(){ if(state.view==='detail') safeRerender(); });
 }
 
 function renderDetail(){
@@ -1647,6 +1663,16 @@ function renderDetail(){
   if(sc) subParts.push(sc);
   mid.appendChild(el('div','sub', subParts.join(' · ')));
 
+  // crew line: director / creator, genres, runtime
+  var crewBits = [];
+  if(entry.director) crewBits.push((entry.type==='tv' ? 'Created by ' : 'Dir. ') + entry.director);
+  if(entry.genres && entry.genres.length) crewBits.push(entry.genres.join(', '));
+  if(entry.type==='movie'){
+    var mMeta = metaCache[entryKey('movie',entry.id)];
+    if(mMeta && mMeta.runtime) crewBits.push(mMeta.runtime + ' min');
+  }
+  if(crewBits.length) mid.appendChild(el('div','crew', crewBits.join(' · ')));
+
   // external ratings via OMDb (optional key in Settings)
   if(entry.omdb && (entry.omdb.rt || entry.omdb.imdb || entry.omdb.mc)){
     var scores = el('div','score-chips');
@@ -1662,6 +1688,13 @@ function renderDetail(){
   wl.href = 'https://www.themoviedb.org/'+entry.type+'/'+entry.id+'/watch?locale=US';
   wl.target='_blank'; wl.rel='noopener';
   var wlWrap = el('div'); wlWrap.style.marginTop='8px'; wlWrap.appendChild(wl);
+  if(entry.trailerKey){
+    var tr = el('a','watch-link','▶ Trailer ↗');
+    tr.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(entry.trailerKey);
+    tr.target='_blank'; tr.rel='noopener';
+    tr.style.marginLeft = '16px';
+    wlWrap.appendChild(tr);
+  }
   mid.appendChild(wlWrap);
   head.appendChild(mid);
 
