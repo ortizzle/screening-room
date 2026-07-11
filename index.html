@@ -414,6 +414,8 @@ var META_STORE = 'sr_meta_cache_v1';
 var IMG = 'https://image.tmdb.org/t/p/w342';
 var API = 'https://api.themoviedb.org/3';
 var PROVIDER_TTL = 24 * 60 * 60 * 1000;
+var LOCAL_THEATERS = 'Harkins Santan, Majestic Chandler AZ'; // used for the in-theaters "Find showtimes" link
+var THEATRICAL_WINDOW_DAYS = 150; // how long after release a no-provider movie is still treated as "in theaters"
 var POSTER_GRADIENTS = [
   'linear-gradient(160deg,#28425E,#101E2E)',
   'linear-gradient(160deg,#4E5040,#26281C)',
@@ -1288,6 +1290,20 @@ function releaseLabel(entry){
   if(entry.year) return 'Released ' + entry.year;
   return 'Not streaming yet';
 }
+function isLikelyInTheaters(entry){
+  if(entry.type !== 'movie' || !entry.releaseDate) return false;
+  var hasProviders = entry.providers && (
+    (entry.providers.stream && entry.providers.stream.length) ||
+    (entry.providers.rent && entry.providers.rent.length) ||
+    (entry.providers.buy && entry.providers.buy.length)
+  );
+  if(hasProviders) return false;
+  var days = Math.floor((new Date() - new Date(entry.releaseDate+'T00:00:00')) / 864e5);
+  return days >= 0 && days <= THEATRICAL_WINDOW_DAYS;
+}
+function theaterSearchUrl(title){
+  return 'https://www.google.com/search?q=' + encodeURIComponent(title + ' showtimes ' + LOCAL_THEATERS);
+}
 function renderTabs(){
   var counts = {watching:0, wishlist:0, finished:0};
   lib.forEach(function(e){ if(counts[e.status]!=null) counts[e.status]++; });
@@ -1945,8 +1961,9 @@ function renderDetail(){
 
   var allChips = providerChips(entry, 'all');
   if(allChips){ allChips.style.marginTop='8px'; mid.appendChild(allChips); }
-  var wl = el('a','watch-link','Where to watch ↗');
-  wl.href = 'https://www.themoviedb.org/'+entry.type+'/'+entry.id+'/watch?locale=US';
+  var inTheaters = isLikelyInTheaters(entry);
+  var wl = el('a','watch-link', inTheaters ? '🎬 Find showtimes ↗' : 'Where to watch ↗');
+  wl.href = inTheaters ? theaterSearchUrl(entry.title) : ('https://www.themoviedb.org/'+entry.type+'/'+entry.id+'/watch?locale=US');
   wl.target='_blank'; wl.rel='noopener';
   var wlWrap = el('div'); wlWrap.style.marginTop='8px'; wlWrap.appendChild(wl);
   if(entry.trailerKey){
