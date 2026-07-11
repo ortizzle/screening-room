@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screening Room — Prototype v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Libre+Franklin:ital,wght@0,300..800;1,400&display=swap');
+
+:root{
+  --velvet:#1C1414;        /* lobby dark, warm not black */
+  --card:#261C1A;
+  --card-2:#302422;
+  --line:#453430;
+  --cream:#F3E9D7;
+  --dim:#A08D7E;
+  --gold:#D9A441;
+  --red:#B5483C;           /* usher-jacket red */
+  --green:#7BAF8C;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:var(--velvet);
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%, #2E2018 0%, transparent 60%);
+  color:var(--cream);
+  font-family:'Libre Franklin',system-ui,sans-serif;
+  min-height:100vh;padding-bottom:60px;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+/* header */
+header{padding-top:28px}
+header h1{
+  font-family:'Archivo',sans-serif;
+  font-variation-settings:'wdth' 72;
+  font-weight:800;
+  font-size:clamp(26px,5.5vw,40px);
+  color:var(--gold);
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+header .now{font-size:11px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin-top:5px}
+header .rule{height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin-top:14px;border-radius:2px}
+
+.searchbar{margin-top:18px;display:flex;gap:10px}
+.searchbar input{
+  flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;color:var(--cream);font:inherit;font-size:15px;
+}
+.searchbar input::placeholder{color:var(--dim)}
+.searchbar button{
+  background:var(--red);border:none;border-radius:12px;padding:0 22px;
+  font:inherit;font-weight:700;color:var(--cream);cursor:pointer;letter-spacing:.5px;
+}
+
+.section-label{
+  font-size:11px;letter-spacing:4px;color:var(--gold);text-transform:uppercase;
+  margin:30px 0 12px;text-align:center;
+}
+.section-label::before{content:'— '}
+.section-label::after{content:' —'}
+
+/* continue watching */
+.cw-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.cw-row::-webkit-scrollbar{display:none}
+.cw-card{
+  min-width:265px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:14px;display:flex;gap:12px;cursor:pointer;
+}
+.cw-card:hover{border-color:var(--gold)}
+.poster-mini{
+  width:52px;height:76px;border-radius:6px;flex-shrink:0;border:1px solid var(--line);
+  display:flex;align-items:flex-end;padding:5px;
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.15;
+}
+.cw-card h3{font-size:15px;font-weight:700}
+.cw-card .next{font-size:12px;color:var(--gold);margin-top:3px;font-weight:600;letter-spacing:.5px}
+.cw-card .ep-title{font-size:12px;color:var(--dim);margin-top:2px;font-style:italic}
+.providers{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.chip{
+  font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;
+  background:var(--card-2);border:1px solid var(--line);color:var(--cream);
+}
+.chip.stream{border-color:#3F5A48;color:var(--green)}
+.chip.rent{border-color:#5F4A28;color:var(--gold)}
+
+/* tabs styled as cinema signage */
+.tabs{display:flex;gap:10px;margin:28px 0 18px;justify-content:center;flex-wrap:wrap}
+.tab{
+  border:1px solid var(--line);background:var(--card);color:var(--dim);
+  font:inherit;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+  padding:10px 20px;border-radius:10px;cursor:pointer;
+}
+.tab.active{border-color:var(--gold);color:var(--gold);box-shadow:0 0 14px rgba(217,164,65,.15)}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.title-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer}
+.title-card:hover{border-color:var(--gold)}
+.poster{
+  aspect-ratio:2/3;display:flex;align-items:flex-end;padding:12px;
+  font-weight:800;font-size:15px;text-transform:uppercase;line-height:1.15;letter-spacing:.3px;
+}
+.title-card .meta{padding:10px 12px}
+.kind{font-size:10px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase}
+.bar{height:5px;background:var(--card-2);border-radius:99px;margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#E8C070);border-radius:99px}
+.pct{font-size:11px;color:var(--gold);float:right;font-weight:700}
+
+/* detail */
+.detail{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:26px}
+.detail-head{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.detail-head .poster-mini{width:64px;height:94px}
+.detail-head h2{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;font-weight:800;font-size:24px;color:var(--gold);letter-spacing:.5px;text-transform:uppercase}
+.detail-head .sub{font-size:12px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+.season{border-top:1px dashed var(--line);margin-top:16px;padding-top:14px}
+.season-row{display:flex;align-items:center;gap:12px}
+.season-row h4{font-size:15px;font-weight:700;flex:1}
+.season-row .sub2{color:var(--dim);font-weight:400;font-size:12px}
+.mark-btn{
+  background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;
+  font:inherit;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;
+}
+.mark-btn:hover{border-color:var(--gold);color:var(--gold)}
+.eps{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.ep{
+  display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;
+  background:var(--card-2);cursor:pointer;user-select:none;
+}
+.ep .code{font-size:11px;color:var(--dim);width:52px;font-weight:600}
+.ep .name{flex:1;font-size:13px}
+.checkbox{
+  width:19px;height:19px;border-radius:50%;border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:#241A0A;flex-shrink:0;
+}
+.ep.seen .checkbox{background:var(--gold);border-color:var(--gold)}
+.ep.seen .name{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--line)}
+
+/* SIGNATURE: ticket-stub review */
+.ticket{
+  margin-top:14px;position:relative;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  display:flex;overflow:hidden;
+}
+.ticket .stub{
+  background:var(--red);color:var(--cream);width:86px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  border-right:2px dashed var(--velvet);padding:14px 8px;
+}
+.ticket .stub .admit{font-size:9px;letter-spacing:2px;writing-mode:vertical-rl;transform:rotate(180deg);opacity:.85}
+.ticket .stub .stars{font-size:14px;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg);color:#F5D98A}
+.ticket .body{padding:16px 18px;flex:1}
+.ticket .body .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.ticket h3{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;font-weight:800;font-size:18px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+.rec{
+  font-size:10px;letter-spacing:1.5px;color:var(--green);
+  border:1px solid #3F5A48;padding:4px 10px;border-radius:99px;text-transform:uppercase;font-weight:700;
+}
+.ticket p{font-size:14px;color:var(--dim);margin-top:8px;line-height:1.55}
+.ticket::before,.ticket::after{
+  content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:var(--velvet);left:78px;
+}
+.ticket::before{top:-8px}
+.ticket::after{bottom:-8px}
+
+footer{margin-top:40px;text-align:center;font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Screening Room</h1>
+    <div class="now">Now Showing · Chris's Watchlist</div>
+    <div class="rule"></div>
+  </header>
+
+  <div class="searchbar">
+    <input type="text" placeholder="Search any movie or show… (TMDB)">
+    <button>Add</button>
+  </div>
+
+  <div class="section-label">Continue Watching</div>
+  <div class="cw-row">
+    <div class="cw-card">
+      <div class="poster-mini" style="background:linear-gradient(160deg,#28425E,#101E2E)">Severance</div>
+      <div>
+        <h3>Severance</h3>
+        <div class="next">NEXT UP · S02E05</div>
+        <div class="ep-title">"Trojan's Horse"</div>
+        <div class="providers"><span class="chip stream">Apple TV+ · Stream</span></div>
+      </div>
+    </div>
+    <div class="cw-card">
+      <div class="poster-mini" style="background:linear-gradient(160deg,#4E5040,#26281C)">Slow Horses</div>
+      <div>
+        <h3>Slow Horses</h3>
+        <div class="next">NEXT UP · S04E02</div>
+        <div class="ep-title">"A Stranger Comes to Town"</div>
+        <div class="providers"><span class="chip stream">Apple TV+ · Stream</span></div>
+      </div>
+    </div>
+    <div class="cw-card">
+      <div class="poster-mini" style="background:linear-gradient(160deg,#6E3230,#2A1210)">Shōgun</div>
+      <div>
+        <h3>Shōgun</h3>
+        <div class="next">NEXT UP · S01E08</div>
+        <div class="ep-title">"The Abyss of Life"</div>
+        <div class="providers"><span class="chip stream">Hulu · Stream</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="watching">Watching</button>
+    <button class="tab" data-tab="wishlist">Wishlist</button>
+    <button class="tab" data-tab="finished">Finished</button>
+  </div>
+
+  <div class="pane" id="pane-watching">
+    <div class="grid">
+      <div class="title-card">
+        <div class="poster" style="background:linear-gradient(165deg,#28425E,#101E2E)">Severance</div>
+        <div class="meta">
+          <span class="kind">TV · 2 Seasons</span><span class="pct">54%</span>
+          <div class="bar"><i style="width:54%"></i></div>
+        </div>
+      </div>
+      <div class="title-card">
+        <div class="poster" style="background:linear-gradient(165deg,#4E5040,#26281C)">Slow Horses</div>
+        <div class="meta">
+          <span class="kind">TV · 4 Seasons</span><span class="pct">79%</span>
+          <div class="bar"><i style="width:79%"></i></div>
+        </div>
+      </div>
+      <div class="title-card">
+        <div class="poster" style="background:linear-gradient(165deg,#6E3230,#2A1210)">Shōgun</div>
+        <div class="meta">
+          <span class="kind">TV · 1 Season</span><span class="pct">70%</span>
+          <div class="bar"><i style="width:70%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Show Detail</div>
+    <div class="detail">
+      <div class="detail-head">
+        <div class="poster-mini" style="background:linear-gradient(160deg,#28425E,#101E2E)">Severance</div>
+        <div>
+          <h2>Severance</h2>
+          <div class="sub">TV · Apple TV+ · 2 Seasons · 18 Episodes</div>
+          <div class="providers" style="margin-top:8px"><span class="chip stream">Apple TV+ · Stream</span><span class="chip rent">Apple · Buy $19.99</span></div>
+        </div>
+      </div>
+
+      <div class="season">
+        <div class="season-row">
+          <h4>Season 1 <span class="sub2">· 9/9 watched</span></h4>
+          <button class="mark-btn">✓ Season watched</button>
+        </div>
+      </div>
+
+      <div class="season">
+        <div class="season-row">
+          <h4>Season 2 <span class="sub2">· <span id="s2count">1</span>/9 watched</span></h4>
+          <button class="mark-btn">Mark season</button>
+        </div>
+        <div class="eps" id="s2eps">
+          <div class="ep seen"><div class="checkbox">✓</div><span class="code">S02E01</span><span class="name">Hello, Ms. Cobel</span></div>
+          <div class="ep"><div class="checkbox"></div><span class="code">S02E02</span><span class="name">Goodbye, Mrs. Selvig</span></div>
+          <div class="ep"><div class="checkbox"></div><span class="code">S02E03</span><span class="name">Who Is Alive?</span></div>
+          <div class="ep"><div class="checkbox"></div><span class="code">S02E04</span><span class="name">Woe's Hollow</span></div>
+          <div class="ep"><div class="checkbox"></div><span class="code">S02E05</span><span class="name">Trojan's Horse</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-wishlist" style="display:none">
+    <div class="grid">
+      <div class="title-card">
+        <div class="poster" style="background:linear-gradient(165deg,#8A6A2E,#3A2A0E)">Dune: Part Two</div>
+        <div class="meta">
+          <span class="kind">Movie · 2024</span>
+          <div class="providers" style="margin-top:8px"><span class="chip stream">Max · Stream</span><span class="chip rent">Rent $5.99</span></div>
+        </div>
+      </div>
+      <div class="title-card">
+        <div class="poster" style="background:linear-gradient(165deg,#2E5E8A,#0E2A3A)">The Bear</div>
+        <div class="meta">
+          <span class="kind">TV · Season 4</span>
+          <div class="providers" style="margin-top:8px"><span class="chip stream">Hulu · Stream</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pane" id="pane-finished" style="display:none">
+    <div class="ticket">
+      <div class="stub">
+        <span class="admit">ADMIT ONE</span>
+        <span class="stars">★★★★★</span>
+      </div>
+      <div class="body">
+        <div class="top">
+          <h3>Andor</h3>
+          <span class="rec">Recommend</span>
+        </div>
+        <p>"Best written show in the entire franchise. Slow-burn spy thriller that just happens to be Star Wars. The prison arc alone is worth it."</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>Screening Room · Prototype v2 · Mock Data</footer>
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(function(tab){
+  tab.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+    document.querySelectorAll('.pane').forEach(function(p){ p.style.display='none'; });
+    document.getElementById('pane-' + tab.dataset.tab).style.display='block';
+  });
+});
+document.querySelectorAll('#s2eps .ep').forEach(function(ep){
+  ep.addEventListener('click', function(){
+    ep.classList.toggle('seen');
+    ep.querySelector('.checkbox').textContent = ep.classList.contains('seen') ? '✓' : '';
+    var n = document.querySelectorAll('#s2eps .ep.seen').length;
+    document.getElementById('s2count').textContent = n;
+  });
+});
+</script>
+</body>
+</html>
