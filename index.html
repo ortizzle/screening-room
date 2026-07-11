@@ -1396,12 +1396,12 @@ function drawTicket(entry){
   ctx.fillStyle='rgba(243,233,215,0.9)'; ctx.font='700 12px "Libre Franklin", sans-serif';
   setLS(ctx,'3px'); ctx.fillText('ADMIT ONE', 0, -18); setLS(ctx,'0px');
   var rN = Math.max(0, Math.min(5, entry.rating||0));
-  ctx.font='20px sans-serif'; setLS(ctx,'0px');
-  var sgap = 22;
+  ctx.font='27px sans-serif'; setLS(ctx,'0px');
+  var sgap = 29;
   for(var s=0;s<5;s++){
     var on = s < rN;
     ctx.fillStyle = on ? '#F5D98A' : 'rgba(245,217,138,0.38)';
-    ctx.fillText(on ? '★' : '☆', (s-2)*sgap, 12);
+    ctx.fillText(on ? '★' : '☆', (s-2)*sgap, 14);
   }
   ctx.restore();
 
