@@ -621,7 +621,12 @@ function doImport(file){
     try{
       var data = JSON.parse(reader.result);
       if(!Array.isArray(data)) throw new Error('shape');
-      lib = data;
+      var valid = data.filter(function(e){
+        return e && typeof e === 'object' && e.id != null &&
+               (e.type === 'movie' || e.type === 'tv') && typeof e.title === 'string';
+      });
+      if(!valid.length) throw new Error('shape');
+      lib = valid;
       saveLib();
       notice('Imported ' + lib.length + ' titles.');
       renderHome();
@@ -794,7 +799,7 @@ function addTitle(base, status, panel, input){
     rating: 0, review: '', recommend: null,
     tmdbScore: base.tmdbScore || 0,
     providers: {stream:[],rent:[],buy:[]}, providersCheckedAt: 0,
-    addedAt: Date.now(), finishedAt: null
+    addedAt: Date.now(), finishedAt: status==='finished' ? Date.now() : null
   };
   lib.push(entry);
   saveLib();
@@ -802,7 +807,7 @@ function addTitle(base, status, panel, input){
   if(input) input.value = '';
 
   // background hydrate metadata + providers
-  hydrateEntry(entry).then(function(){ if(state.view==='home' || (state.view==='detail' && state.detail && state.detail.id===entry.id)) rerender(); });
+  hydrateEntry(entry).then(function(){ if(state.view==='home' || (state.view==='detail' && state.detail && state.detail.id===entry.id)) safeRerender(); });
 
   if(status === 'finished'){
     state.view = 'detail'; state.detail = {type:entry.type, id:entry.id};
@@ -868,7 +873,7 @@ function refreshAllProviders(){
   var due = lib.filter(function(e){ return !e.providersCheckedAt || (Date.now()-e.providersCheckedAt) >= PROVIDER_TTL; });
   if(!due.length) return;
   Promise.all(due.map(function(e){ return maybeRefreshProviders(e); })).then(function(){
-    if(state.view==='home' || state.view==='detail') rerender();
+    if(state.view==='home' || state.view==='detail') safeRerender();
   });
 }
 
@@ -919,6 +924,13 @@ function renderHome(){
   state.view = 'home';
   rerender();
 }
+/* rerender for background data arrivals — skipped if the user is mid-typing
+   (search box, review textarea, key field) so their draft isn't wiped */
+function safeRerender(){
+  var a = document.activeElement;
+  if(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+  rerender();
+}
 function rerender(){
   if(state.view === 'setup'){ renderSetup(false); return; }
   if(state.view === 'settings'){ renderSetup(true); return; }
@@ -953,8 +965,10 @@ function renderContinueWatching(){
     if(nu){
       mid.appendChild(el('div','next', 'NEXT UP · S'+pad2(nu.season)+'E'+pad2(nu.ep)));
       if(nu.name) mid.appendChild(el('div','ep-title', '"'+nu.name+'"'));
-    }else{
+    }else if(totalEpisodes(entry) > 0){
       mid.appendChild(el('div','next', 'ALL CAUGHT UP'));
+    }else{
+      mid.appendChild(el('div','next', 'TV' + (entry.year?(' · '+entry.year):'')));
     }
     var prov = providerChips(entry, 'stream', 1);
     if(prov) mid.appendChild(prov);
@@ -1516,7 +1530,10 @@ function seasonBlock(entry, season){
     var doToggle = function(){
       var nowFull = seasonWatchedCount(entry, season) >= season.episodeCount && season.episodeCount>0;
       var target = !nowFull;
-      for(var i=1;i<=season.episodeCount;i++){ entry.watched['s'+season.n+'e'+i] = target; }
+      for(var i=1;i<=season.episodeCount;i++){
+        var k = 's'+season.n+'e'+i;
+        if(target) entry.watched[k] = true; else delete entry.watched[k];
+      }
       saveLib();
       maybeFinishPrompt(entry);
       rerender();
@@ -1621,9 +1638,11 @@ function seasonAvgRating(entry, season){
 function maybeFinishPrompt(entry){
   if(entry.status==='finished') return;
   var te = totalEpisodes(entry);
-  if(te>0 && watchedCount(entry) >= te){
-    notice('That was the finale — scroll down to rate it.');
+  if(te>0 && watchedCount(entry) >= te && !entry._rating){
     entry._rating = true;
+    saveLib();
+    notice('That was the finale — scroll down to rate it.');
+    rerender(); // make the rate box actually appear
   }
 }
 
@@ -1676,6 +1695,7 @@ function renderRateBox(container, entry){
     entry.review = ta.value.trim();
     entry.recommend = draftRec;
     if(entry.status!=='finished'){ entry.status='finished'; entry.finishedAt = Date.now(); state.tab='finished'; }
+    if(!entry.finishedAt) entry.finishedAt = Date.now();
     delete entry._rating;
     saveLib();
     state.view='home'; state.detail=null;
