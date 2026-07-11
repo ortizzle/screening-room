@@ -269,6 +269,9 @@ a.chip:hover{filter:brightness(1.2)}
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 .rate-hint{font-size:11px;color:var(--dim);margin-top:8px}
+.history{border-top:1px dashed var(--line);margin-top:18px;padding-top:14px}
+.hist-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.hist-line{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5}
 .rate-box textarea{
   width:100%;margin-top:14px;background:var(--card-2);border:1px solid var(--line);
   border-radius:10px;padding:12px;color:var(--cream);font:inherit;font-size:14px;min-height:90px;resize:vertical;
@@ -315,6 +318,7 @@ a.chip:hover{filter:brightness(1.2)}
   border:1px solid #3F5A48;padding:4px 10px;border-radius:99px;text-transform:uppercase;font-weight:700;
 }
 .rec.no{color:var(--red);border-color:var(--red)}
+.rec.times{color:var(--gold);border-color:rgba(217,164,65,.5)}
 .ticket p.take{font-size:14px;color:var(--dim);margin-top:8px;line-height:1.55}
 .ticket .yr{font-size:11px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:6px}
 .ticket-share{
@@ -1530,6 +1534,8 @@ function drawTicket(entry){
   var metaParts = [entry.type==='tv'?'TV':'MOVIE'];
   if(entry.year) metaParts.push(String(entry.year));
   if(entry.type==='tv'){ var sn = (entry.seasons||[]).length; if(sn) metaParts.push(sn + ' SEASON' + (sn>1?'S':'')); }
+  var dwc = 1 + ((entry.history && entry.history.length) || 0);
+  if(dwc > 1) metaParts.push(dwc + '× WATCHED');
   ctx.fillStyle='#A08D7E'; ctx.font='700 11px "Libre Franklin", sans-serif';
   setLS(ctx,'1.5px');
   ctx.fillText(metaParts.join('  ·  '), bodyX, yearBase);
@@ -1616,6 +1622,8 @@ function ticketCard(entry){
   top.appendChild(el('h3', null, entry.title));
   if(entry.recommend === true){ top.appendChild(el('span','rec','Recommended')); }
   else if(entry.recommend === false){ top.appendChild(el('span','rec no','Skip it')); }
+  var wc = 1 + ((entry.history && entry.history.length) || 0);
+  if(wc > 1){ top.appendChild(el('span','rec times', wc + '× watched')); }
   body.appendChild(top);
   if(entry.review){ body.appendChild(el('p','take', '"'+entry.review+'"')); }
   else{ body.appendChild(el('p','take', 'No note left — the stars say enough.')); }
@@ -2015,15 +2023,42 @@ function renderRateBox(container, entry){
   if(entry.status==='finished'){
     var rewatch = el('button','ghost-btn','↺ Move to Watching (rewatch)');
     on(rewatch,'click', function(){
+      // archive this screening as a past stub before the rewatch begins
+      if(!entry.history) entry.history = [];
+      entry.history.push({
+        rating: entry.rating||0, review: entry.review||'',
+        recommend: entry.recommend, finishedAt: entry.finishedAt||null
+      });
       entry.status='watching'; entry.finishedAt=null; delete entry._rating;
+      if(entry.type==='tv') entry.watched = {}; // fresh episode progress for the rewatch
       saveLib(); state.tab='watching';
-      notice('Back in Watching for a rewatch.');
+      notice('Back in Watching — screening #' + (entry.history.length+1) + '.');
       goHome();
     });
     toggleRow.appendChild(rewatch);
   }
 
   box.appendChild(toggleRow);
+
+  // past screenings from rewatches
+  if(entry.history && entry.history.length){
+    var hist = el('div','history');
+    hist.appendChild(el('div','hist-label','Previous screenings'));
+    entry.history.slice().reverse().forEach(function(h){
+      var bits = [starsStr(h.rating)];
+      if(h.finishedAt){ var hd = fmtDateTs(h.finishedAt); if(hd) bits.push(hd); }
+      if(h.recommend === true) bits.push('👍');
+      else if(h.recommend === false) bits.push('👎');
+      var line = bits.join(' · ');
+      if(h.review){
+        var snip = h.review.length > 70 ? h.review.slice(0,70) + '…' : h.review;
+        line += ' · “' + snip + '”';
+      }
+      hist.appendChild(el('div','hist-line', line));
+    });
+    box.appendChild(hist);
+  }
+
   container.appendChild(box);
 }
 
