@@ -282,6 +282,13 @@ a.chip:hover{filter:brightness(1.2)}
 .rec.no{color:var(--red);border-color:var(--red)}
 .ticket p.take{font-size:14px;color:var(--dim);margin-top:8px;line-height:1.55}
 .ticket .yr{font-size:11px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:6px}
+.ticket-share{
+  margin-top:14px;display:inline-flex;align-items:center;gap:6px;
+  background:none;border:1px solid var(--line);color:var(--dim);
+  border-radius:8px;font-size:12px;font-weight:600;padding:7px 13px;letter-spacing:.3px;
+}
+.ticket-share:hover,.ticket-share:focus-visible{border-color:var(--gold);color:var(--gold)}
+.ticket-share .share-ico{font-size:14px;font-weight:700}
 .ticket::before,.ticket::after{
   content:'';position:absolute;width:16px;height:16px;border-radius:50%;
   background:var(--velvet);left:78px;
@@ -1116,6 +1123,196 @@ function moveStatus(entry, status){
   rerender();
 }
 
+/* ---------- shareable ticket image ---------- */
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x,   y+h, r);
+  ctx.arcTo(x,   y+h, x,   y,   r);
+  ctx.arcTo(x,   y,   x+w, y,   r);
+  ctx.closePath();
+}
+function wrapText(ctx, text, maxWidth, maxLines){
+  var words = (text||'').split(/\s+/), lines = [], cur = '';
+  for(var i=0;i<words.length;i++){
+    var test = cur ? cur+' '+words[i] : words[i];
+    if(cur && ctx.measureText(test).width > maxWidth){ lines.push(cur); cur = words[i]; }
+    else cur = test;
+    if(maxLines && lines.length >= maxLines){ break; }
+  }
+  if(cur && (!maxLines || lines.length < maxLines)) lines.push(cur);
+  if(maxLines && lines.length >= maxLines){
+    var last = lines[maxLines-1];
+    while(last.length && ctx.measureText(last+'…').width > maxWidth){ last = last.slice(0,-1); }
+    lines[maxLines-1] = last.replace(/[\s]+$/,'') + '…';
+  }
+  return lines;
+}
+function setLS(ctx, v){ try{ ctx.letterSpacing = v; }catch(e){} }
+
+function drawTicket(entry){
+  var S = 2;                       // supersample for crispness
+  var W = 560, M = 16, stubW = 84, padX = 26, padY = 28;
+  var bodyX = M + stubW + padX, bodyRight = W - M - padX, bodyW = bodyRight - bodyX;
+  var scratch = document.createElement('canvas').getContext('2d');
+
+  var titleText = (entry.title||'').toUpperCase();
+  var titleSize = 30;
+  scratch.font = '800 ' + titleSize + 'px Archivo, sans-serif';
+  while(titleSize > 17 && scratch.measureText(titleText).width > bodyW){
+    titleSize -= 1; scratch.font = '800 ' + titleSize + 'px Archivo, sans-serif';
+  }
+  var reviewText = entry.review ? ('“' + entry.review + '”') : 'No note left — the stars say enough.';
+  scratch.font = '400 20px "Libre Franklin", sans-serif';
+  var reviewLines = wrapText(scratch, reviewText, bodyW, 10);
+  var reviewLH = 28;
+  var recText = entry.recommend===true ? 'RECOMMEND' : (entry.recommend===false ? 'SKIP IT' : '');
+
+  // vertical layout in the body
+  var y = M + padY;
+  var titleBase = y + titleSize; y = titleBase + 16;
+  var recY = 0; if(recText){ recY = y; y += 26 + 12; }
+  var reviewTop = y; y += reviewLines.length * reviewLH + 12;
+  var yearBase = y + 12; y = yearBase + padY + M;
+  var H = Math.max(Math.round(y), M + 210 + M);
+
+  var canvas = document.createElement('canvas');
+  canvas.width = W*S; canvas.height = H*S;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(S,S);
+
+  // velvet backdrop + warm glow
+  ctx.fillStyle = '#1C1414'; ctx.fillRect(0,0,W,H);
+  var glow = ctx.createRadialGradient(W/2,-30,0, W/2,-30,W*0.75);
+  glow.addColorStop(0,'rgba(46,32,24,0.85)'); glow.addColorStop(1,'rgba(28,20,20,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
+
+  var cardX=M, cardY=M, cardW=W-2*M, cardH=H-2*M, r=16;
+  roundRect(ctx, cardX, cardY, cardW, cardH, r);
+  ctx.fillStyle='#261C1A'; ctx.fill();
+  ctx.lineWidth=1; ctx.strokeStyle='#453430'; ctx.stroke();
+
+  // red stub, clipped to the card so its left corners match
+  ctx.save();
+  roundRect(ctx, cardX, cardY, cardW, cardH, r); ctx.clip();
+  ctx.fillStyle='#B5483C'; ctx.fillRect(cardX, cardY, stubW, cardH);
+  ctx.restore();
+
+  var seamX = cardX + stubW;
+  ctx.save();
+  ctx.strokeStyle='#1C1414'; ctx.lineWidth=2; ctx.setLineDash([4,7]);
+  ctx.beginPath(); ctx.moveTo(seamX, cardY+8); ctx.lineTo(seamX, cardY+cardH-8); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle='#1C1414';
+  ctx.beginPath(); ctx.arc(seamX, cardY, 10, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(seamX, cardY+cardH, 10, 0, Math.PI*2); ctx.fill();
+
+  // stub: vertical ADMIT ONE + star rating
+  ctx.save();
+  ctx.translate(cardX + stubW/2, cardY + cardH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(243,233,215,0.9)'; ctx.font='700 12px "Libre Franklin", sans-serif';
+  setLS(ctx,'3px'); ctx.fillText('ADMIT ONE', 0, -18); setLS(ctx,'0px');
+  var starStr=''; for(var s=0;s<5;s++) starStr += (s < (entry.rating||0)) ? '★' : '☆';
+  ctx.fillStyle='#F5D98A'; ctx.font='15px sans-serif';
+  setLS(ctx,'2px'); ctx.fillText(starStr, 0, 10); setLS(ctx,'0px');
+  ctx.restore();
+
+  // body: title
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle='#D9A441'; ctx.font='800 ' + titleSize + 'px Archivo, sans-serif';
+  setLS(ctx,'0.5px'); ctx.fillText(titleText, bodyX, titleBase); setLS(ctx,'0px');
+
+  // recommend / skip pill
+  if(recText){
+    ctx.font='700 11px "Libre Franklin", sans-serif';
+    setLS(ctx,'1.5px');
+    var pillW = ctx.measureText(recText).width + 24, pillH = 26;
+    roundRect(ctx, bodyX, recY, pillW, pillH, 13);
+    var isRec = entry.recommend===true;
+    ctx.lineWidth=1; ctx.strokeStyle = isRec ? '#3F5A48' : '#B5483C'; ctx.stroke();
+    ctx.fillStyle = isRec ? '#7BAF8C' : '#B5483C';
+    ctx.textBaseline='middle'; ctx.fillText(recText, bodyX+12, recY+pillH/2+1); ctx.textBaseline='alphabetic';
+    setLS(ctx,'0px');
+  }
+
+  // review
+  ctx.fillStyle='#A08D7E'; ctx.font='400 20px "Libre Franklin", sans-serif';
+  var ry = reviewTop + 18;
+  reviewLines.forEach(function(line){ ctx.fillText(line, bodyX, ry); ry += reviewLH; });
+
+  // meta + brand footer
+  ctx.fillStyle='#A08D7E'; ctx.font='700 11px "Libre Franklin", sans-serif';
+  setLS(ctx,'1.5px');
+  ctx.fillText(((entry.type==='tv'?'TV':'MOVIE') + (entry.year?('  ·  '+entry.year):'')), bodyX, yearBase);
+  ctx.fillStyle='rgba(217,164,65,0.8)'; ctx.textAlign='right';
+  ctx.fillText('SCREENING ROOM', bodyRight, cardY+cardH-16);
+  ctx.textAlign='left'; setLS(ctx,'0px');
+
+  return canvas;
+}
+function buildTicketCanvas(entry){
+  var jobs = [];
+  if(document.fonts){
+    if(document.fonts.ready) jobs.push(document.fonts.ready);
+    if(document.fonts.load){
+      try{
+        jobs.push(document.fonts.load('800 30px Archivo'));
+        jobs.push(document.fonts.load('700 12px "Libre Franklin"'));
+        jobs.push(document.fonts.load('400 20px "Libre Franklin"'));
+      }catch(e){}
+    }
+  }
+  return Promise.all(jobs).catch(function(){}).then(function(){ return drawTicket(entry); });
+}
+function ticketShareText(entry){
+  var stars=''; for(var i=0;i<5;i++) stars += (i < (entry.rating||0)) ? '★' : '☆';
+  var lines = [entry.title + '  ' + stars];
+  if(entry.review) lines.push('“' + entry.review + '”');
+  if(entry.recommend===true) lines.push('👍 Recommend');
+  else if(entry.recommend===false) lines.push('👎 Skip it');
+  lines.push('— my Screening Room ticket');
+  return lines.join('\n');
+}
+function ticketFileName(entry){
+  var slug = (entry.title||'ticket').replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase();
+  return (slug||'ticket') + '-ticket.png';
+}
+function downloadBlob(blob, name){
+  try{
+    var url = URL.createObjectURL(blob);
+    var a = el('a'); a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }catch(e){}
+}
+function shareTicket(entry, btn){
+  if(btn){ btn.disabled = true; }
+  buildTicketCanvas(entry).then(function(canvas){
+    canvas.toBlob(function(blob){
+      if(btn){ btn.disabled = false; }
+      if(!blob){ notice('Could not render the ticket image.'); return; }
+      var name = ticketFileName(entry);
+      var text = ticketShareText(entry);
+      var file = null;
+      try{ file = new File([blob], name, {type:'image/png'}); }catch(e){}
+      if(file && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], text:text}).catch(function(err){
+          if(!err || err.name !== 'AbortError'){ downloadBlob(blob, name); }
+        });
+      }else if(navigator.share){
+        navigator.share({text:text}).then(function(){ downloadBlob(blob, name); notice('Image saved to share alongside.'); })
+          .catch(function(err){ if(!err || err.name !== 'AbortError'){ downloadBlob(blob, name); } });
+      }else{
+        downloadBlob(blob, name);
+        notice('Ticket image saved to downloads.');
+      }
+    }, 'image/png');
+  }).catch(function(){ if(btn){ btn.disabled = false; } notice('Could not create the ticket image.'); });
+}
+
 function ticketCard(entry){
   var t = el('div','ticket');
   var stub = el('div','stub');
@@ -1134,6 +1331,14 @@ function ticketCard(entry){
   if(entry.review){ body.appendChild(el('p','take', '"'+entry.review+'"')); }
   else{ body.appendChild(el('p','take', 'No note left — the stars say enough.')); }
   body.appendChild(el('div','yr', (entry.type==='tv'?'TV':'Movie') + (entry.year?(' · '+entry.year):'')));
+
+  var share = el('button','ticket-share');
+  share.appendChild(el('span','share-ico','↗'));
+  share.appendChild(document.createTextNode('Share ticket'));
+  share.setAttribute('aria-label','Share this ticket');
+  on(share, 'click', function(ev){ ev.stopPropagation(); shareTicket(entry, share); });
+  body.appendChild(share);
+
   t.appendChild(body);
 
   on(t, 'click', function(){ openDetail(entry); });
