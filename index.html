@@ -133,14 +133,15 @@ a.chip:hover{filter:brightness(1.2)}
 .watch-link:hover{text-decoration:underline}
 
 /* tabs */
-.tabs{display:flex;gap:10px;margin:28px 0 18px;justify-content:center;flex-wrap:wrap}
+.tabs{display:flex;gap:8px;margin:28px 0 18px;flex-wrap:nowrap}
 .tab{
+  flex:1;min-width:0;text-align:center;white-space:nowrap;
   border:1px solid var(--line);background:var(--card);color:var(--dim);
-  font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
-  padding:10px 20px;border-radius:10px;
+  font-weight:700;font-size:12px;letter-spacing:.8px;text-transform:uppercase;
+  padding:11px 6px;border-radius:10px;
 }
 .tab.active{border-color:var(--gold);color:var(--gold);box-shadow:0 0 14px rgba(217,164,65,.15)}
-.tab .count{opacity:.7;font-size:11px;margin-left:5px}
+.tab .count{opacity:.7;font-size:11px;margin-left:4px}
 
 /* grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
