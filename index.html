@@ -453,6 +453,13 @@ function renderSetup(isSettings){
   clear(app);
   renderHeader(false);
 
+  if(isSettings){
+    var backTop = el('button','ghost-btn','‹ Back');
+    backTop.style.marginTop = '20px';
+    on(backTop, 'click', goHome);
+    app.appendChild(backTop);
+  }
+
   var box = el('div','setup');
   box.appendChild(el('h2', null, isSettings ? 'Settings' : 'Welcome to the Screening Room'));
   box.appendChild(el('p', null, isSettings
@@ -543,10 +550,6 @@ function renderSetup(isSettings){
       row.appendChild(clearBtn);
     }
 
-    var backBtn = el('button','ghost-btn','Back to app');
-    on(backBtn, 'click', renderHome);
-    row.appendChild(backBtn);
-
     box.appendChild(row);
   }
 
@@ -584,9 +587,20 @@ function doImport(file){
 /* ========================================================= */
 /* HEADER                                                    */
 /* ========================================================= */
+function goHome(){ state.view = 'home'; state.detail = null; window.scrollTo(0,0); rerender(); }
+
 function renderHeader(withGear){
   var header = el('header');
-  header.appendChild(el('h1', null, 'Screening Room'));
+  var h1 = el('h1', null, 'Screening Room');
+  if(cred){
+    h1.style.cursor = 'pointer';
+    h1.setAttribute('role','button');
+    h1.setAttribute('tabindex','0');
+    h1.title = 'Home';
+    on(h1, 'click', goHome);
+    on(h1, 'keydown', function(e){ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); goHome(); } });
+  }
+  header.appendChild(h1);
   header.appendChild(el('div','now', "Now Showing · Chris's Watchlist"));
   header.appendChild(el('div','rule'));
   if(withGear){
@@ -667,11 +681,14 @@ function searchResultRow(r, panel, input){
   row.appendChild(pm);
   var mid = el('div');
   mid.appendChild(el('div','r-title', title));
-  mid.appendChild(el('div','r-meta', (isTv?'TV':'Movie') + ' · ' + year));
+  var metaStr = (isTv?'TV':'Movie') + ' · ' + year;
+  var sc = scoreText(r.vote_average);
+  if(sc) metaStr += ' · ' + sc;
+  mid.appendChild(el('div','r-meta', metaStr));
   row.appendChild(mid);
   on(row, 'click', function(){
     openAddFlow({
-      id: r.id, type: isTv?'tv':'movie', title:title, year:year, posterPath:r.poster_path||null
+      id: r.id, type: isTv?'tv':'movie', title:title, year:year, posterPath:r.poster_path||null, tmdbScore: r.vote_average||0
     }, panel, input);
   });
   return row;
@@ -694,7 +711,7 @@ function openAddFlow(base, panel, input){
   actions.style.gap = '8px';
   actions.style.flexWrap = 'wrap';
   ['watching','wishlist','finished'].forEach(function(status){
-    var b = el('button','mini-btn', status==='finished' ? 'Already finished' : (status.charAt(0).toUpperCase()+status.slice(1)));
+    var b = el('button','mini-btn', status==='finished' ? 'Already finished' : statusLabel(status));
     on(b, 'click', function(){
       addTitle(base, status, panel, input);
     });
@@ -711,6 +728,7 @@ function addTitle(base, status, panel, input){
     seasons: base.type==='tv' ? [] : undefined,
     watched: base.type==='tv' ? {} : undefined,
     rating: 0, review: '', recommend: null,
+    tmdbScore: base.tmdbScore || 0,
     providers: {stream:[],rent:[],buy:[]}, providersCheckedAt: 0,
     addedAt: Date.now(), finishedAt: null
   };
@@ -729,7 +747,7 @@ function addTitle(base, status, panel, input){
   }else{
     state.tab = status;
     rerender();
-    notice('Added to ' + status + '.');
+    notice('Added to ' + statusLabel(status) + '.');
   }
 }
 
@@ -745,11 +763,13 @@ function hydrateEntry(entry){
         .map(function(s){ return {n:s.season_number, name:s.name, episodeCount:s.episode_count||0, episodes:null}; });
       entry.seasons = seasons;
       if(!entry.year && d.first_air_date) entry.year = d.first_air_date.slice(0,4);
+      if(d.vote_average) entry.tmdbScore = d.vote_average;
     }).catch(function(){}));
-  }else if(entry.type === 'movie' && !metaCache[entryKey('movie',entry.id)]){
+  }else if(entry.type === 'movie' && (!metaCache[entryKey('movie',entry.id)] || !entry.tmdbScore)){
     jobs.push(tmdb('/movie/'+entry.id).then(function(d){
       metaCache[entryKey('movie',entry.id)] = {runtime:d.runtime||0, tagline:d.tagline||''};
       saveMeta();
+      if(d.vote_average) entry.tmdbScore = d.vote_average;
     }).catch(function(){}));
   }
   jobs.push(maybeRefreshProviders(entry));
@@ -919,11 +939,20 @@ function providerChips(entry, which, limit){
   return wrap;
 }
 
+function statusLabel(s){
+  if(s === 'wishlist') return 'Waiting';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function scoreText(v){
+  v = Number(v);
+  if(!v || v <= 0) return null;
+  return 'TMDB ★ ' + (Math.round(v*10)/10).toFixed(1);
+}
 function renderTabs(){
   var counts = {watching:0, wishlist:0, finished:0};
   lib.forEach(function(e){ if(counts[e.status]!=null) counts[e.status]++; });
   var tabs = el('div','tabs');
-  [['watching','Watching'],['wishlist','Wishlist'],['finished','Finished']].forEach(function(t){
+  [['watching','Watching'],['wishlist','Waiting'],['finished','Finished']].forEach(function(t){
     var b = el('button','tab' + (state.tab===t[0]?' active':''));
     b.appendChild(document.createTextNode(t[1]));
     b.appendChild(el('span','count', String(counts[t[0]])));
@@ -1097,6 +1126,8 @@ function renderDetail(){
     if(sn) subParts.push(sn+' Season'+(sn>1?'s':''));
     if(te) subParts.push(te+' Episodes');
   }
+  var sc = scoreText(entry.tmdbScore);
+  if(sc) subParts.push(sc);
   mid.appendChild(el('div','sub', subParts.join(' · ')));
 
   var allChips = providerChips(entry, 'all');
