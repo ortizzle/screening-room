@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Screening Room</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1C1414">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Screening Room">
+<meta name="description" content="Personal movie & TV tracker — now showing: Chris's watchlist.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Libre+Franklin:ital,wght@0,300..800;1,400&display=swap');
 
@@ -25,7 +35,9 @@ body{
   background-image:radial-gradient(ellipse 80% 50% at 50% -10%, #2E2018 0%, transparent 60%);
   color:var(--cream);
   font-family:'Libre Franklin',system-ui,sans-serif;
-  min-height:100vh;padding-bottom:60px;
+  min-height:100vh;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:calc(60px + env(safe-area-inset-bottom));
 }
 .wrap{max-width:960px;margin:0 auto;padding:0 20px}
 
@@ -1338,6 +1350,9 @@ function renderRateBox(container, entry){
 /* ========================================================= */
 /* BOOT                                                      */
 /* ========================================================= */
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 cred = loadCred();
 if(!cred){
   renderSetup(false);
