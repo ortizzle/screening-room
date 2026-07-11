@@ -91,6 +91,32 @@ header .rule{height:2px;background:linear-gradient(90deg,var(--gold),transparent
 .result .r-title{font-weight:700;font-size:14px}
 .result .r-meta{font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
 
+/* add-to-list chooser */
+.addflow{padding:16px}
+.addflow-head{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.addflow-head .poster-mini{width:46px;height:68px}
+.addflow-head .r-title{font-weight:700;font-size:15px;line-height:1.2}
+.addflow-head .r-meta{font-size:11px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+.addflow-q{font-size:11px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:12px}
+.addflow-opts{display:flex;flex-direction:column;gap:10px}
+.addflow-opt{
+  display:flex;align-items:center;width:100%;text-align:left;
+  background:var(--card-2);border:1px solid var(--line);border-left-width:4px;
+  border-radius:12px;padding:15px 16px;color:var(--cream);
+}
+.addflow-opt:hover,.addflow-opt:focus-visible{border-color:var(--gold);background:#3a2c27}
+.addflow-opt.watching{border-left-color:var(--green)}
+.addflow-opt.waiting{border-left-color:var(--gold)}
+.addflow-opt.finished{border-left-color:var(--red)}
+.addflow-opt .lbl{flex:1;font-weight:800;font-size:16px;letter-spacing:.3px}
+.addflow-opt .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top:3px;letter-spacing:.2px}
+.addflow-opt .arr{color:var(--dim);font-size:20px;margin-left:8px}
+.addflow-cancel{
+  display:block;margin:14px auto 0;background:none;border:none;color:var(--dim);
+  font-size:13px;font-weight:600;padding:8px 16px;
+}
+.addflow-cancel:hover{color:var(--cream)}
+
 .section-label{
   font-size:11px;letter-spacing:4px;color:var(--gold);text-transform:uppercase;
   margin:30px 0 12px;text-align:center;
@@ -708,25 +734,41 @@ function openAddFlow(base, panel, input){
   if(existing){ notice('"'+base.title+'" is already in your library.'); return; }
   clear(panel);
   var box = el('div','results');
-  var head = el('div','result');
-  var pm = el('div','poster-mini'); posterStyle(pm, base.posterPath, base.title); head.appendChild(pm);
-  var mid = el('div');
-  mid.appendChild(el('div','r-title', base.title));
-  mid.appendChild(el('div','r-meta', 'Add to which list?'));
-  head.appendChild(mid);
-  box.appendChild(head);
+  var wrap = el('div','addflow');
 
-  var actions = el('div','result');
-  actions.style.gap = '8px';
-  actions.style.flexWrap = 'wrap';
-  ['watching','wishlist','finished'].forEach(function(status){
-    var b = el('button','mini-btn', status==='finished' ? 'Already finished' : statusLabel(status));
-    on(b, 'click', function(){
-      addTitle(base, status, panel, input);
-    });
-    actions.appendChild(b);
+  var head = el('div','addflow-head');
+  var pm = el('div','poster-mini'); posterStyle(pm, base.posterPath, base.title); head.appendChild(pm);
+  var mid = el('div'); mid.style.minWidth = '0';
+  mid.appendChild(el('div','r-title', base.title));
+  mid.appendChild(el('div','r-meta', (base.type==='tv'?'TV':'Movie') + (base.year?(' · '+base.year):'')));
+  head.appendChild(mid);
+  wrap.appendChild(head);
+
+  wrap.appendChild(el('div','addflow-q', 'Add to…'));
+
+  var opts = el('div','addflow-opts');
+  var choices = [
+    {status:'watching', cls:'watching', label:'Watching',         sub:'I’m watching this now'},
+    {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
+    {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
+  ];
+  choices.forEach(function(c){
+    var b = el('button','addflow-opt ' + c.cls);
+    var lbl = el('span','lbl');
+    lbl.appendChild(document.createTextNode(c.label));
+    lbl.appendChild(el('span','sub', c.sub));
+    b.appendChild(lbl);
+    b.appendChild(el('span','arr', '›'));
+    on(b, 'click', function(){ addTitle(base, c.status, panel, input); });
+    opts.appendChild(b);
   });
-  box.appendChild(actions);
+  wrap.appendChild(opts);
+
+  var cancel = el('button','addflow-cancel', 'Cancel');
+  on(cancel, 'click', function(){ clear(panel); });
+  wrap.appendChild(cancel);
+
+  box.appendChild(wrap);
   panel.appendChild(box);
 }
 
