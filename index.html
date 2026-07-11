@@ -184,21 +184,21 @@ a.chip:hover{filter:brightness(1.2)}
 .mark-btn:hover{border-color:var(--gold);color:var(--gold)}
 .eps{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .ep{
-  display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;
-  background:var(--card-2);cursor:pointer;user-select:none;flex-wrap:wrap;
+  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;
+  background:var(--card-2);cursor:pointer;user-select:none;
 }
-.ep .code{font-size:11px;color:var(--dim);width:52px;font-weight:600;flex-shrink:0}
-.ep .name{flex:1 1 130px;font-size:13px;min-width:130px}
+.ep .code{font-size:11px;color:var(--dim);width:30px;font-weight:600;flex-shrink:0}
+.ep .name{flex:1;font-size:13px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .checkbox{
   width:19px;height:19px;border-radius:50%;border:1.5px solid var(--line);
   display:flex;align-items:center;justify-content:center;font-size:11px;color:#241A0A;flex-shrink:0;
 }
 .ep.seen .checkbox{background:var(--gold);border-color:var(--gold)}
 .ep.seen .name{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--line)}
-.ep-rate{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-left:auto;flex-shrink:0}
-.ep-score{font-size:10px;color:var(--dim);font-weight:600;letter-spacing:.3px;white-space:nowrap}
-.ep-stars{display:flex;gap:1px}
-.ep-star{font-size:16px;line-height:1;color:var(--line);background:none;border:none;padding:0 1px}
+.ep-rate{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ep-score{font-size:9px;color:var(--dim);font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.ep-stars{display:flex;gap:0}
+.ep-star{font-size:14px;line-height:1;color:var(--line);background:none;border:none;padding:0 1px}
 .ep-star.on{color:var(--gold)}
 .ep-star:hover{color:var(--gold);opacity:.85}
 
@@ -1292,8 +1292,9 @@ function seasonBlock(entry, season){
       var row2 = el('div','ep' + (seen?' seen':''));
       var cb = el('div','checkbox', seen?'✓':'');
       row2.appendChild(cb);
-      row2.appendChild(el('span','code', 'S'+pad2(season.n)+'E'+pad2(ep.n)));
-      row2.appendChild(el('span','name', ep.name));
+      row2.appendChild(el('span','code', 'E'+pad2(ep.n)));
+      var nameEl = el('span','name', ep.name); nameEl.title = ep.name;
+      row2.appendChild(nameEl);
 
       function setSeen(nowSeen){
         if(nowSeen) entry.watched[key] = true; else delete entry.watched[key];
@@ -1308,7 +1309,7 @@ function seasonBlock(entry, season){
       // rating cluster (taps here never toggle the watched state)
       var rate = el('div','ep-rate');
       on(rate, 'click', function(ev){ ev.stopPropagation(); });
-      if(ep.score){ rate.appendChild(el('div','ep-score', 'TMDB ★ ' + (Math.round(ep.score*10)/10).toFixed(1))); }
+      if(ep.score){ rate.appendChild(el('div','ep-score', 'TMDB ' + (Math.round(ep.score*10)/10).toFixed(1))); }
 
       var starsWrap = el('div','ep-stars');
       var starEls = [];
