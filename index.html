@@ -733,7 +733,22 @@ function doImport(file){
 /* ========================================================= */
 /* HEADER                                                    */
 /* ========================================================= */
-function goHome(){ state.view = 'home'; state.detail = null; window.scrollTo(0,0); rerender(); }
+/* history-aware navigation: detail/settings/stats push a state so the
+   Android back button (and browser back) returns home instead of exiting */
+var navDepth = 0;
+function pushNav(){ try{ history.pushState({sr:1}, ''); navDepth++; }catch(e){} }
+function goHomeNow(){
+  if(!cred){ renderSetup(false); return; }
+  state.view = 'home'; state.detail = null; window.scrollTo(0,0); rerender();
+}
+function goHome(){
+  if(navDepth > 0){ history.back(); }
+  else{ goHomeNow(); }
+}
+window.addEventListener('popstate', function(){
+  if(navDepth > 0) navDepth--;
+  if(state.view !== 'home') goHomeNow();
+});
 
 function renderHeader(withGear){
   var header = el('header');
@@ -753,7 +768,7 @@ function renderHeader(withGear){
     var gear = el('button','gear','⚙');
     gear.title = 'Settings';
     gear.setAttribute('aria-label','Settings');
-    on(gear, 'click', function(){ renderSetup(true); });
+    on(gear, 'click', function(){ pushNav(); renderSetup(true); });
     header.appendChild(gear);
   }
   app.appendChild(header);
@@ -1161,6 +1176,13 @@ function fmtDate(iso){
     return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
   }catch(e){ return null; }
 }
+function fmtDateTs(ts){
+  try{
+    var d = new Date(ts);
+    if(isNaN(d.getTime())) return null;
+    return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+  }catch(e){ return null; }
+}
 function releaseLabel(entry){
   if(entry.releaseDate){
     var f = fmtDate(entry.releaseDate);
@@ -1291,9 +1313,9 @@ function removeBtn(entry){
 function removeEntry(entry){
   var idx = lib.indexOf(entry);
   if(idx>=0){ lib.splice(idx,1); saveLib(); }
-  if(state.view==='detail'){ state.view='home'; state.detail=null; }
   notice('Removed "'+entry.title+'".');
-  rerender();
+  if(state.view==='detail'){ goHome(); }
+  else{ rerender(); }
 }
 function moveStatus(entry, status){
   entry.status = status;
@@ -1394,7 +1416,14 @@ function drawTicket(entry){
   ctx.rotate(-Math.PI/2);
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle='rgba(243,233,215,0.9)'; ctx.font='700 12px "Libre Franklin", sans-serif';
-  setLS(ctx,'3px'); ctx.fillText('ADMIT ONE', 0, -18); setLS(ctx,'0px');
+  var stubLabel = 'ADMIT ONE';
+  if(entry.finishedAt){
+    var sd = fmtDateTs(entry.finishedAt);
+    if(sd) stubLabel += ' · ' + sd.toUpperCase();
+  }
+  // shrink letter-spacing if the dated label would overflow the stub height
+  var stubLS = (stubLabel.length > 12 && cardH < 300) ? '1px' : '3px';
+  setLS(ctx, stubLS); ctx.fillText(stubLabel, 0, -18); setLS(ctx,'0px');
   var rN = Math.max(0, Math.min(5, entry.rating||0));
   ctx.font='27px sans-serif'; setLS(ctx,'0px');
   var sgap = 29;
@@ -1523,6 +1552,7 @@ function ticketCard(entry){
   var yrParts = [entry.type==='tv'?'TV':'Movie'];
   if(entry.year) yrParts.push(String(entry.year));
   if(entry.type==='tv'){ var ycsn = (entry.seasons||[]).length; if(ycsn) yrParts.push(ycsn + ' Season' + (ycsn>1?'s':'')); }
+  if(entry.finishedAt){ var wd = fmtDateTs(entry.finishedAt); if(wd) yrParts.push('Watched ' + wd); }
   body.appendChild(el('div','yr', yrParts.join(' · ')));
 
   var share = el('button','ticket-share');
@@ -1542,6 +1572,7 @@ function ticketCard(entry){
 /* DETAIL                                                    */
 /* ========================================================= */
 function openDetail(entry){
+  if(state.view !== 'detail') pushNav();
   state.view = 'detail';
   state.detail = {type:entry.type, id:entry.id};
   window.scrollTo(0,0);
@@ -1562,7 +1593,7 @@ function renderDetail(){
 
   var back = el('button','ghost-btn key','‹ Back');
   back.style.marginTop='20px';
-  on(back, 'click', function(){ state.view='home'; state.detail=null; rerender(); });
+  on(back, 'click', goHome);
   app.appendChild(back);
 
   var d = el('div','detail');
@@ -1883,9 +1914,8 @@ function renderRateBox(container, entry){
     if(!entry.finishedAt) entry.finishedAt = Date.now();
     delete entry._rating;
     saveLib();
-    state.view='home'; state.detail=null;
     notice('Ticket filed under Finished.');
-    rerender();
+    goHome();
   });
   toggleRow.appendChild(saveBtn);
 
@@ -1893,9 +1923,9 @@ function renderRateBox(container, entry){
     var rewatch = el('button','ghost-btn','↺ Move to Watching (rewatch)');
     on(rewatch,'click', function(){
       entry.status='watching'; entry.finishedAt=null; delete entry._rating;
-      saveLib(); state.view='home'; state.detail=null; state.tab='watching';
+      saveLib(); state.tab='watching';
       notice('Back in Watching for a rewatch.');
-      rerender();
+      goHome();
     });
     toggleRow.appendChild(rewatch);
   }
