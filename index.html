@@ -1075,21 +1075,8 @@ function titleCard(entry){
     else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent='Not streaming yet'; meta.appendChild(none); }
   }
 
-  // actions
-  var actions = el('div','card-actions');
-  if(entry.status==='wishlist'){
-    var start = el('button','mini-btn','▶ Start watching');
-    on(start, 'click', function(ev){ ev.stopPropagation(); moveStatus(entry,'watching'); notice('Moved to Watching.'); });
-    actions.appendChild(start);
-  }
-  if(entry.status==='watching' && entry.type==='movie'){
-    var mw = el('button','mini-btn','✓ Mark watched');
-    on(mw, 'click', function(ev){ ev.stopPropagation(); openMovieFinish(entry); });
-    actions.appendChild(mw);
-  }
-  actions.appendChild(removeBtn(entry));
-  meta.appendChild(actions);
-
+  // no action buttons on the card itself — tap the poster to open the detail,
+  // where status changes, rating, and remove live.
   card.appendChild(meta);
   on(card, 'click', function(){ openDetail(entry); });
   return card;
@@ -1222,7 +1209,7 @@ function drawTicket(entry){
   for(var s=0;s<5;s++){
     var on = s < rN;
     ctx.fillStyle = on ? '#F5D98A' : 'rgba(245,217,138,0.38)';
-    ctx.fillText(on ? '★' : '☆', (2-s)*sgap, 12);
+    ctx.fillText(on ? '★' : '☆', (s-2)*sgap, 12);
   }
   ctx.restore();
 
@@ -1328,8 +1315,8 @@ function ticketCard(entry){
   stub.appendChild(el('span','admit','ADMIT ONE'));
   var rN = Math.max(0, Math.min(5, entry.rating||0));
   var starsEl = el('span','stars');
-  starsEl.appendChild(el('span','sempty', '☆☆☆☆☆'.slice(0, 5 - rN)));
   starsEl.appendChild(el('span','sfill', '★★★★★'.slice(0, rN)));
+  starsEl.appendChild(el('span','sempty', '☆☆☆☆☆'.slice(0, 5 - rN)));
   stub.appendChild(starsEl);
   t.appendChild(stub);
 
@@ -1431,6 +1418,15 @@ function renderDetail(){
     });
     topActions.appendChild(refresh);
   }
+  if(entry.status==='watching'){
+    var toWait = el('button','mark-btn','Move to Waiting');
+    on(toWait, 'click', function(){ moveStatus(entry,'wishlist'); notice('Moved to Waiting.'); });
+    topActions.appendChild(toWait);
+  }else if(entry.status==='wishlist'){
+    var toWatch = el('button','mark-btn','▶ Start watching');
+    on(toWatch, 'click', function(){ moveStatus(entry,'watching'); notice('Moved to Watching.'); });
+    topActions.appendChild(toWatch);
+  }
   topActions.appendChild(removeBtn(entry));
   head.appendChild(topActions);
 
@@ -1461,10 +1457,6 @@ function renderMovieDetail(container, entry){
     var b = el('button','mark-btn','✓ Mark watched & rate');
     on(b, 'click', function(){ openMovieFinish(entry); });
     row.appendChild(b);
-  }else if(entry.status==='wishlist'){
-    var s = el('button','mark-btn','▶ Start watching');
-    on(s, 'click', function(){ moveStatus(entry,'watching'); openDetail(entry); });
-    row.appendChild(s);
   }
   box.appendChild(row);
   if(meta && meta.tagline){ var tg = el('div','sub2'); tg.style.marginTop='8px'; tg.style.fontStyle='italic'; tg.textContent='"'+meta.tagline+'"'; box.appendChild(tg); }
