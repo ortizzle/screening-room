@@ -320,15 +320,27 @@ a.chip:hover{filter:brightness(1.2)}
 .ticket .stub .admit{font-size:9px;letter-spacing:2px;writing-mode:vertical-rl;transform:rotate(180deg);opacity:.85}
 .ticket .stub .stars{font-size:18px;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg);color:#F5D98A}
 .ticket .stub .stars .sempty{opacity:.38}
-.ticket .body{padding:16px 18px;flex:1;min-width:0}
+.ticket .body{padding:16px 18px;flex:1;min-width:0;position:relative}
+.ticket .body.stamped .top{padding-right:112px}
 .ticket .body .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .ticket h3{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;font-weight:800;font-size:18px;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
 .rec{
   font-size:10px;letter-spacing:1.5px;color:var(--green);
   border:1px solid #3F5A48;padding:4px 10px;border-radius:99px;text-transform:uppercase;font-weight:700;
 }
-.rec.no{color:var(--red);border-color:var(--red)}
 .rec.times{color:var(--gold);border-color:rgba(217,164,65,.5)}
+.stamp{
+  position:absolute;top:12px;right:14px;pointer-events:none;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 90;font-weight:800;
+  font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--green);border:2px solid var(--green);border-radius:8px;
+  padding:4px 9px;transform:rotate(-9deg);
+}
+.stamp::after{
+  content:'';position:absolute;inset:-4px;border:1px solid var(--green);border-radius:10px;opacity:.4;
+}
+.stamp.no{color:var(--red);border-color:var(--red)}
+.stamp.no::after{border-color:var(--red)}
 .ticket p.take{font-size:14px;color:var(--dim);margin-top:8px;line-height:1.55}
 .ticket .yr{font-size:11px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:6px}
 .ticket-share{
@@ -1456,22 +1468,32 @@ function drawTicket(entry){
   var bodyX = M + stubW + padX, bodyRight = W - M - padX, bodyW = bodyRight - bodyX;
   var scratch = document.createElement('canvas').getContext('2d');
 
+  var recText = entry.recommend===true ? 'RECOMMENDED' : (entry.recommend===false ? 'SKIP IT' : '');
+  var stampReserve = 0;
+  if(recText){
+    scratch.font = '700 12px "Libre Franklin", sans-serif';
+    stampReserve = scratch.measureText(recText).width + 46; // stamp padding + ring + gap from title
+  }
+
   var titleText = (entry.title||'').toUpperCase();
   var titleSize = 30;
   scratch.font = '800 ' + titleSize + 'px Archivo, sans-serif';
-  while(titleSize > 17 && scratch.measureText(titleText).width > bodyW){
+  while(titleSize > 20 && scratch.measureText(titleText).width > bodyW){
     titleSize -= 1; scratch.font = '800 ' + titleSize + 'px Archivo, sans-serif';
   }
+  // wrap (not just shrink) so a long title flows around the stamp instead of
+  // overflowing the card — all lines use the stamp-reserved width for safety
+  var titleLines = wrapText(scratch, titleText, bodyW - stampReserve, 2);
+  var titleLH = Math.round(titleSize * 1.15);
+
   var reviewText = entry.review ? ('“' + entry.review + '”') : 'No note left — the stars say enough.';
   scratch.font = '400 20px "Libre Franklin", sans-serif';
   var reviewLines = wrapText(scratch, reviewText, bodyW, 10);
   var reviewLH = 28;
-  var recText = entry.recommend===true ? 'RECOMMENDED' : (entry.recommend===false ? 'SKIP IT' : '');
 
   // vertical layout in the body
   var y = M + padY;
-  var titleBase = y + titleSize; y = titleBase + 16;
-  var recY = 0; if(recText){ recY = y; y += 26 + 12; }
+  var titleBase = y + titleSize; y = titleBase + (titleLines.length-1)*titleLH + 16;
   var reviewTop = y; y += reviewLines.length * reviewLH + 12;
   var yearBase = y + 12; y = yearBase + padY + M;
   var H = Math.max(Math.round(y), M + 210 + M);
@@ -1535,22 +1557,34 @@ function drawTicket(entry){
   }
   ctx.restore();
 
-  // body: title
+  // body: title (may wrap onto a second line to flow around the stamp)
   ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   ctx.fillStyle='#D9A441'; ctx.font='800 ' + titleSize + 'px Archivo, sans-serif';
-  setLS(ctx,'0.5px'); ctx.fillText(titleText, bodyX, titleBase); setLS(ctx,'0px');
+  setLS(ctx,'0.5px');
+  titleLines.forEach(function(line, idx){ ctx.fillText(line, bodyX, titleBase + idx*titleLH); });
+  setLS(ctx,'0px');
 
-  // recommend / skip pill
+  // recommend / skip — rotated ink-stamp in the top-right corner
   if(recText){
-    ctx.font='700 11px "Libre Franklin", sans-serif';
-    setLS(ctx,'1.5px');
-    var pillW = ctx.measureText(recText).width + 24, pillH = 26;
-    roundRect(ctx, bodyX, recY, pillW, pillH, 13);
+    ctx.save();
+    ctx.font='700 12px "Libre Franklin", sans-serif';
+    setLS(ctx,'2px');
+    var stTextW = ctx.measureText(recText).width;
+    var stampPadX = 11, stampW = stTextW + stampPadX*2, stampH = 30;
+    var stampCX = bodyRight - stampW/2 - 6;
+    var stampCY = titleBase - titleSize*0.42;
+    ctx.translate(stampCX, stampCY);
+    ctx.rotate(-9 * Math.PI/180);
     var isRec = entry.recommend===true;
-    ctx.lineWidth=1; ctx.strokeStyle = isRec ? '#3F5A48' : '#B5483C'; ctx.stroke();
-    ctx.fillStyle = isRec ? '#7BAF8C' : '#B5483C';
-    ctx.textBaseline='middle'; ctx.fillText(recText, bodyX+12, recY+pillH/2+1); ctx.textBaseline='alphabetic';
-    setLS(ctx,'0px');
+    var ink = isRec ? '#7BAF8C' : '#B5483C';
+    roundRect(ctx, -stampW/2-4, -stampH/2-4, stampW+8, stampH+8, 10);
+    ctx.lineWidth=1; ctx.globalAlpha=0.4; ctx.strokeStyle=ink; ctx.stroke(); ctx.globalAlpha=1;
+    roundRect(ctx, -stampW/2, -stampH/2, stampW, stampH, 8);
+    ctx.lineWidth=2; ctx.strokeStyle=ink; ctx.stroke();
+    ctx.fillStyle=ink; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(recText, 0, 1);
+    ctx.restore();
+    setLS(ctx,'0px'); ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   }
 
   // review
@@ -1821,11 +1855,14 @@ function ticketCard(entry){
   var body = el('div','body');
   var top = el('div','top');
   top.appendChild(el('h3', null, entry.title));
-  if(entry.recommend === true){ top.appendChild(el('span','rec','Recommended')); }
-  else if(entry.recommend === false){ top.appendChild(el('span','rec no','Skip it')); }
   var wc = 1 + ((entry.history && entry.history.length) || 0);
   if(wc > 1){ top.appendChild(el('span','rec times', wc + '× watched')); }
   body.appendChild(top);
+  if(entry.recommend === true || entry.recommend === false){
+    var stamp = el('div','stamp' + (entry.recommend===false?' no':''), entry.recommend===true?'Recommended':'Skip it');
+    body.appendChild(stamp);
+    body.classList.add('stamped');
+  }
   if(entry.review){ body.appendChild(el('p','take', '"'+entry.review+'"')); }
   else{ body.appendChild(el('p','take', 'No note left — the stars say enough.')); }
   var yrParts = [entry.type==='tv'?'TV':'Movie'];
