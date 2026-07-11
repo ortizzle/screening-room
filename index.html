@@ -414,7 +414,6 @@ var META_STORE = 'sr_meta_cache_v1';
 var IMG = 'https://image.tmdb.org/t/p/w342';
 var API = 'https://api.themoviedb.org/3';
 var PROVIDER_TTL = 24 * 60 * 60 * 1000;
-var LOCAL_THEATERS = 'Harkins Santan, Majestic Chandler AZ'; // used for the in-theaters "Find showtimes" link
 var THEATRICAL_WINDOW_DAYS = 150; // how long after release a no-provider movie is still treated as "in theaters"
 var POSTER_GRADIENTS = [
   'linear-gradient(160deg,#28425E,#101E2E)',
@@ -1302,7 +1301,7 @@ function isLikelyInTheaters(entry){
   return days >= 0 && days <= THEATRICAL_WINDOW_DAYS;
 }
 function theaterSearchUrl(title){
-  return 'https://www.google.com/search?q=' + encodeURIComponent(title + ' showtimes ' + LOCAL_THEATERS);
+  return 'https://www.google.com/search?q=' + encodeURIComponent(title + ' showtimes near me');
 }
 function renderTabs(){
   var counts = {watching:0, wishlist:0, finished:0};
