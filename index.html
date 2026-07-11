@@ -415,6 +415,7 @@ var IMG = 'https://image.tmdb.org/t/p/w342';
 var API = 'https://api.themoviedb.org/3';
 var PROVIDER_TTL = 24 * 60 * 60 * 1000;
 var THEATRICAL_WINDOW_DAYS = 150; // how long after release a no-provider movie is still treated as "in theaters"
+var PRE_RELEASE_SHOWTIME_DAYS = 14; // how soon before release theaters typically open showtimes/presales
 var POSTER_GRADIENTS = [
   'linear-gradient(160deg,#28425E,#101E2E)',
   'linear-gradient(160deg,#4E5040,#26281C)',
@@ -1298,7 +1299,9 @@ function isLikelyInTheaters(entry){
   );
   if(hasProviders) return false;
   var days = Math.floor((new Date() - new Date(entry.releaseDate+'T00:00:00')) / 864e5);
-  return days >= 0 && days <= THEATRICAL_WINDOW_DAYS;
+  // already released (within the theatrical window) OR releasing soon enough that
+  // theaters have likely posted showtimes/presale tickets
+  return (days >= 0 && days <= THEATRICAL_WINDOW_DAYS) || (days < 0 && -days <= PRE_RELEASE_SHOWTIME_DAYS);
 }
 function theaterSearchUrl(title){
   return 'https://www.google.com/search?q=' + encodeURIComponent(title + ' showtimes near me');
