@@ -264,6 +264,11 @@ a.chip:hover{filter:brightness(1.2)}
 .stars-input{display:flex;gap:6px}
 .star{font-size:34px;line-height:1;color:var(--line);background:none;border:none;padding:2px}
 .star.on{color:var(--gold)}
+.star.half{
+  background:linear-gradient(90deg, var(--gold) 50%, var(--line) 50%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.rate-hint{font-size:11px;color:var(--dim);margin-top:8px}
 .rate-box textarea{
   width:100%;margin-top:14px;background:var(--card-2);border:1px solid var(--line);
   border-radius:10px;padding:12px;color:var(--cream);font:inherit;font-size:14px;min-height:90px;resize:vertical;
@@ -1203,6 +1208,11 @@ function scoreText(v){
   if(!v || v <= 0) return null;
   return 'TMDB ★ ' + (Math.round(v*10)/10).toFixed(1);
 }
+function starsStr(r){
+  r = Math.max(0, Math.min(5, Number(r)||0));
+  var full = Math.floor(r), half = (r % 1) >= 0.5;
+  return '★★★★★'.slice(0, full) + (half ? '½' : '') + '☆☆☆☆☆'.slice(0, 5 - full - (half ? 1 : 0));
+}
 function fmtDate(iso){
   try{
     var d = new Date(iso + 'T00:00:00');
@@ -1480,12 +1490,16 @@ function drawTicket(entry){
   var stubLS = (stubLabel.length > 12 && cardH < 300) ? '1px' : '3px';
   setLS(ctx, stubLS); ctx.fillText(stubLabel, 0, -18); setLS(ctx,'0px');
   var rN = Math.max(0, Math.min(5, entry.rating||0));
+  var rFull = Math.floor(rN), rHalf = (rN % 1) >= 0.5;
   ctx.font='27px sans-serif'; setLS(ctx,'0px');
   var sgap = 29;
   for(var s=0;s<5;s++){
-    var on = s < rN;
-    ctx.fillStyle = on ? '#F5D98A' : 'rgba(245,217,138,0.38)';
-    ctx.fillText(on ? '★' : '☆', (s-2)*sgap, 14);
+    var glyph, gold;
+    if(s < rFull){ glyph='★'; gold=true; }
+    else if(s === rFull && rHalf){ glyph='½'; gold=true; }
+    else { glyph='☆'; gold=false; }
+    ctx.fillStyle = gold ? '#F5D98A' : 'rgba(245,217,138,0.38)';
+    ctx.fillText(glyph, (s-2)*sgap, 14);
   }
   ctx.restore();
 
@@ -1540,7 +1554,7 @@ function buildTicketCanvas(entry){
   return Promise.all(jobs).catch(function(){}).then(function(){ return drawTicket(entry); });
 }
 function ticketShareText(entry){
-  var stars=''; for(var i=0;i<5;i++) stars += (i < (entry.rating||0)) ? '★' : '☆';
+  var stars = starsStr(entry.rating);
   var lines = [entry.title + '  ' + stars];
   if(entry.review) lines.push('“' + entry.review + '”');
   if(entry.recommend===true) lines.push('👍 Recommended');
@@ -1590,9 +1604,10 @@ function ticketCard(entry){
   var stub = el('div','stub');
   stub.appendChild(el('span','admit','ADMIT ONE'));
   var rN = Math.max(0, Math.min(5, entry.rating||0));
+  var rFull = Math.floor(rN), rHalf = (rN % 1) >= 0.5;
   var starsEl = el('span','stars');
-  starsEl.appendChild(el('span','sfill', '★★★★★'.slice(0, rN)));
-  starsEl.appendChild(el('span','sempty', '☆☆☆☆☆'.slice(0, 5 - rN)));
+  starsEl.appendChild(el('span','sfill', '★★★★★'.slice(0, rFull) + (rHalf ? '½' : '')));
+  starsEl.appendChild(el('span','sempty', '☆☆☆☆☆'.slice(0, 5 - rFull - (rHalf ? 1 : 0))));
   stub.appendChild(starsEl);
   t.appendChild(stub);
 
@@ -1941,18 +1956,29 @@ function renderRateBox(container, entry){
 
   var starsWrap = el('div','stars-input');
   var starEls = [];
-  function paint(v){ for(var i=0;i<5;i++){ starEls[i].classList.toggle('on', i<v); } }
+  function paint(v){
+    for(var i=0;i<5;i++){
+      starEls[i].classList.remove('on','half');
+      if(v >= i+1) starEls[i].classList.add('on');
+      else if(v === i+0.5) starEls[i].classList.add('half');
+    }
+  }
   for(var i=0;i<5;i++){
     (function(idx){
       var s = el('button','star','★');
       s.setAttribute('aria-label',(idx+1)+' star'+(idx?'s':''));
-      on(s,'click', function(){ current = idx+1; paint(current); });
+      on(s,'click', function(){
+        var v = idx+1;
+        current = (current === v) ? v - 0.5 : v; // second tap on the same star = half
+        paint(current);
+      });
       starsWrap.appendChild(s);
       starEls.push(s);
     })(i);
   }
   paint(current);
   box.appendChild(starsWrap);
+  box.appendChild(el('div','rate-hint','Tap a star again for a half-star'));
 
   var ta = el('textarea');
   ta.placeholder = 'My take…';
