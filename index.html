@@ -258,6 +258,16 @@ a.chip:hover{filter:brightness(1.2)}
   font-size:12px;font-weight:600;padding:6px 12px;
 }
 .mark-btn:hover{border-color:var(--gold);color:var(--gold);background:#2c211d}
+/* shaded states: green fill once a season is fully watched,
+   gold fill on the season you're actively working through */
+.mark-btn.complete{
+  background:rgba(123,175,140,.16);border-color:#3F5A48;color:var(--green);
+}
+.mark-btn.complete:hover{background:rgba(123,175,140,.24);border-color:var(--green);color:var(--green)}
+.mark-btn.active{
+  background:rgba(217,164,65,.14);border-color:rgba(217,164,65,.55);color:var(--gold);
+}
+.mark-btn.active:hover{background:rgba(217,164,65,.22);border-color:var(--gold);color:var(--gold)}
 .mark-btn.danger{color:#d98a80;border-color:rgba(181,72,60,.5)}
 .mark-btn.danger:hover{border-color:var(--red);color:#eab6ad;background:#2c211d}
 .eps{margin-top:12px;display:flex;flex-direction:column;gap:6px}
@@ -425,7 +435,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.1 · Season Colors';
+var APP_VERSION = 'v1.2 · Shaded Buttons';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -2107,6 +2117,10 @@ function seasonBlock(entry, season){
     var a = seasonAvgRating(entry, season);
     avgSpan.textContent = a ? ('  ·  ★ ' + a.avg + ' avg') : '';
     markBtn.textContent = full2 ? '✓ Season watched' : 'Mark season';
+    // shade the button: green when done, gold on the season you're up to
+    var nu = nextUnwatched(entry);
+    var isCurrent = !full2 && nu && nu.season === season.n;
+    markBtn.className = 'mark-btn' + (full2 ? ' complete' : (isCurrent ? ' active' : ''));
   }
   refreshHeader();
 
