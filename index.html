@@ -238,8 +238,21 @@ a.chip:hover{filter:brightness(1.2)}
 .detail-top-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
 .season{border-top:1px dashed var(--line);margin-top:16px;padding-top:14px}
 .season-row{display:flex;align-items:center;gap:12px}
-.season-row h4{font-size:15px;font-weight:700;flex:1;cursor:pointer}
-.season-row .sub2{color:var(--dim);font-weight:400;font-size:12px}
+.season-row h4{
+  flex:1;cursor:pointer;
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;
+  font-weight:800;font-size:16px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--gold);
+}
+/* a fully-watched season recedes so the one you're on stands out */
+.season.done .season-row h4{color:var(--dim)}
+.season-row .sub2{
+  color:var(--dim);font-weight:400;font-size:12px;
+  font-family:'Libre Franklin',system-ui,sans-serif;font-variation-settings:normal;
+  letter-spacing:0;text-transform:none;
+}
+.season-row .sub2.complete{color:var(--green);font-weight:600}
+.season-row .sub2.avg{color:var(--gold);font-weight:600}
 .mark-btn{
   background:#241b18;border:1px solid #6d5347;color:var(--cream);border-radius:8px;
   font-size:12px;font-weight:600;padding:6px 12px;
@@ -254,7 +267,7 @@ a.chip:hover{filter:brightness(1.2)}
 }
 .ep-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ep-line1{display:flex;align-items:baseline;gap:9px}
-.ep .code{font-size:11px;color:var(--dim);width:30px;font-weight:600;flex-shrink:0}
+.ep .code{font-size:11px;color:var(--gold);width:30px;font-weight:700;flex-shrink:0}
 .ep .name{flex:1;font-size:13px;min-width:0;line-height:1.3}
 .checkbox{
   width:19px;height:19px;border-radius:50%;border:1.5px solid var(--line);margin-top:1px;
@@ -262,8 +275,11 @@ a.chip:hover{filter:brightness(1.2)}
 }
 .ep.seen .checkbox{background:var(--gold);border-color:var(--gold)}
 .ep.seen .name{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--line)}
+.ep.seen .code{color:var(--dim);font-weight:600}
 .ep-rate{display:flex;align-items:center;gap:10px;padding-left:39px}
 .ep-score{font-size:11px;color:var(--dim);font-weight:600;letter-spacing:.2px;white-space:nowrap}
+/* standout episode (TMDB 8.0+) gets the gold treatment */
+.ep-score.hot{color:var(--gold);font-weight:700}
 .ep-stars{display:flex;gap:1px}
 .ep-star{font-size:16px;line-height:1;color:var(--line);background:none;border:none;padding:0 1px}
 .ep-star.on{color:var(--gold)}
@@ -390,6 +406,7 @@ a.chip:hover{filter:brightness(1.2)}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 footer{margin-top:40px;text-align:center;font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase}
+footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);opacity:.7}
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001ms !important;transition:none !important}
@@ -408,6 +425,7 @@ footer{margin-top:40px;text-align:center;font-size:10px;color:var(--dim);letter-
 (function(){
 
 /* ---------- constants ---------- */
+var APP_VERSION = 'v1.1 · Season Colors';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -817,7 +835,9 @@ function renderHeader(withGear){
   return header;
 }
 function footer(){
-  return el('footer', null, 'Screening Room · Your reel, your rules');
+  var f = el('footer', null, 'Screening Room · Your reel, your rules');
+  f.appendChild(el('div','ver', APP_VERSION));
+  return f;
 }
 
 /* ========================================================= */
@@ -2031,9 +2051,9 @@ function renderMovieDetail(container, entry){
   var box = el('div','season');
   var row = el('div','season-row');
   var meta = metaCache[entryKey('movie',entry.id)];
-  var label = 'Feature';
-  if(meta && meta.runtime){ label += ' · ' + meta.runtime + ' min'; }
-  row.appendChild(el('h4', null, label));
+  var h4 = el('h4', null, 'Feature');
+  if(meta && meta.runtime){ h4.appendChild(el('span','sub2', ' · ' + meta.runtime + ' min')); }
+  row.appendChild(h4);
   if(entry.status==='watching'){
     var b = el('button','mark-btn','✓ Mark watched & rate');
     on(b, 'click', function(){ openMovieFinish(entry); });
@@ -2071,7 +2091,7 @@ function seasonBlock(entry, season){
   var h4 = el('h4', null, season.name || ('Season '+season.n));
   var countSpan = el('span','sub2', ' · ' + wc + '/' + (season.episodeCount||0) + ' watched');
   h4.appendChild(countSpan);
-  var avgSpan = el('span','sub2');
+  var avgSpan = el('span','sub2 avg');
   h4.appendChild(avgSpan);
   row.appendChild(h4);
 
@@ -2080,10 +2100,13 @@ function seasonBlock(entry, season){
 
   function refreshHeader(){
     var wc2 = seasonWatchedCount(entry, season);
+    var full2 = season.episodeCount>0 && wc2>=season.episodeCount;
     countSpan.textContent = ' · ' + wc2 + '/' + (season.episodeCount||0) + ' watched';
+    countSpan.className = 'sub2' + (full2 ? ' complete' : '');
+    block.classList.toggle('done', full2);
     var a = seasonAvgRating(entry, season);
     avgSpan.textContent = a ? ('  ·  ★ ' + a.avg + ' avg') : '';
-    markBtn.textContent = (season.episodeCount>0 && wc2>=season.episodeCount) ? '✓ Season watched' : 'Mark season';
+    markBtn.textContent = full2 ? '✓ Season watched' : 'Mark season';
   }
   refreshHeader();
 
@@ -2152,7 +2175,10 @@ function seasonBlock(entry, season){
       // rating cluster (taps here never toggle the watched state)
       var rate = el('div','ep-rate');
       on(rate, 'click', function(ev){ ev.stopPropagation(); });
-      if(ep.score){ rate.appendChild(el('div','ep-score', 'TMDB ' + (Math.round(ep.score*10)/10).toFixed(1))); }
+      if(ep.score){
+        var hot = ep.score >= 8;
+        rate.appendChild(el('div','ep-score' + (hot?' hot':''), (hot?'★ ':'') + 'TMDB ' + (Math.round(ep.score*10)/10).toFixed(1)));
+      }
 
       var starsWrap = el('div','ep-stars');
       var starEls = [];
