@@ -406,6 +406,7 @@ a.chip:hover{filter:brightness(1.2)}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 footer{margin-top:40px;text-align:center;font-size:10px;color:var(--dim);letter-spacing:3px;text-transform:uppercase}
+footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);opacity:.7}
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001ms !important;transition:none !important}
@@ -424,6 +425,7 @@ footer{margin-top:40px;text-align:center;font-size:10px;color:var(--dim);letter-
 (function(){
 
 /* ---------- constants ---------- */
+var APP_VERSION = 'v1.1 · Season Colors';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -833,7 +835,9 @@ function renderHeader(withGear){
   return header;
 }
 function footer(){
-  return el('footer', null, 'Screening Room · Your reel, your rules');
+  var f = el('footer', null, 'Screening Room · Your reel, your rules');
+  f.appendChild(el('div','ver', APP_VERSION));
+  return f;
 }
 
 /* ========================================================= */
