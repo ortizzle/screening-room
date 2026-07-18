@@ -178,6 +178,23 @@ a.chip:hover{filter:brightness(1.2)}
 .sort-chip:hover{border-color:var(--gold)}
 .sort-chip.active{border-color:var(--gold);color:var(--gold)}
 
+/* tags: small display chips on cards + editable picker on detail */
+.tags-mini{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.chip.tag{border-color:rgba(217,164,65,.55);color:var(--gold)}
+.tag-editor{border-top:1px dashed var(--line);margin-top:16px;padding-top:14px}
+.tags-row{display:flex;gap:8px;flex-wrap:wrap}
+.tag-chip{
+  background:var(--card-2);border:1px solid var(--line);color:var(--dim);border-radius:99px;
+  font-size:12px;font-weight:700;letter-spacing:.3px;padding:8px 14px;min-height:36px;
+}
+.tag-chip:hover{border-color:var(--gold)}
+.tag-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(217,164,65,.14)}
+.tag-add-row{display:flex;gap:8px;margin-top:12px}
+.tag-add-row input{
+  flex:1;background:var(--card-2);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;color:var(--cream);font:inherit;font-size:13px;min-width:0;
+}
+
 /* box office report */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px}
 .stat{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:16px 12px;text-align:center}
@@ -435,7 +452,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.2 · Shaded Buttons';
+var APP_VERSION = 'v1.3 · Tags';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -444,6 +461,7 @@ var API = 'https://api.themoviedb.org/3';
 var PROVIDER_TTL = 24 * 60 * 60 * 1000;
 var THEATRICAL_WINDOW_DAYS = 150; // how long after release a no-provider movie is still treated as "in theaters"
 var PRE_RELEASE_SHOWTIME_DAYS = 14; // how soon before release theaters typically open showtimes/presales
+var DEFAULT_TAGS = ['Family Movie Night', 'Date Night', 'Rewatch', "Kids' Pick"];
 var POSTER_GRADIENTS = [
   'linear-gradient(160deg,#28425E,#101E2E)',
   'linear-gradient(160deg,#4E5040,#26281C)',
@@ -556,6 +574,30 @@ function findEntry(type, id){
   return null;
 }
 
+/* ---------- tags ---------- */
+function entryHasTag(entry, tag){ return (entry.tags||[]).indexOf(tag) !== -1; }
+function allKnownTags(){
+  var set = {};
+  DEFAULT_TAGS.forEach(function(t){ set[t]=true; });
+  lib.forEach(function(e){ (e.tags||[]).forEach(function(t){ set[t]=true; }); });
+  var custom = Object.keys(set).filter(function(t){ return DEFAULT_TAGS.indexOf(t)===-1; })
+    .sort(function(a,b){ return a.localeCompare(b); });
+  return DEFAULT_TAGS.concat(custom);
+}
+function toggleTag(entry, tag){
+  entry.tags = entry.tags || [];
+  var idx = entry.tags.indexOf(tag);
+  if(idx===-1) entry.tags.push(tag); else entry.tags.splice(idx,1);
+  saveLib();
+}
+function addCustomTag(entry, raw){
+  var t = (raw||'').trim().slice(0,30);
+  if(!t) return false;
+  entry.tags = entry.tags || [];
+  if(entry.tags.indexOf(t)===-1){ entry.tags.push(t); saveLib(); }
+  return true;
+}
+
 /* ---------- small DOM helpers ---------- */
 function el(tag, cls, text){
   var n = document.createElement(tag);
@@ -590,7 +632,7 @@ function notice(text){
 }
 
 /* ---------- view state ---------- */
-var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false }; // detail: {type,id}
+var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false, tagFilter:null }; // detail: {type,id}
 
 /* ========================================================= */
 /* SETUP / SETTINGS SCREEN                                    */
@@ -974,7 +1016,7 @@ function openAddFlow(base, panel, input){
 function addTitle(base, status, panel, input){
   var entry = {
     id: base.id, type: base.type, title: base.title, year: base.year, posterPath: base.posterPath,
-    status: status,
+    status: status, tags: [],
     seasons: base.type==='tv' ? [] : undefined,
     watched: base.type==='tv' ? {} : undefined,
     epRatings: base.type==='tv' ? {} : undefined,
@@ -1344,7 +1386,7 @@ function renderTabs(){
     var b = el('button','tab' + (state.tab===t[0]?' active':''));
     b.appendChild(document.createTextNode(t[1]));
     b.appendChild(el('span','count', String(counts[t[0]])));
-    on(b, 'click', function(){ state.tab = t[0]; rerender(); });
+    on(b, 'click', function(){ state.tab = t[0]; state.tagFilter = null; rerender(); });
     tabs.appendChild(b);
   });
   app.appendChild(tabs);
@@ -1354,8 +1396,12 @@ function renderPane(){
   var items = lib.filter(function(e){ return e.status === state.tab; });
   if(!items.length){ app.appendChild(emptyState(state.tab)); return; }
 
+  var tagBar = tagFilterBar(items);
+
   if(state.tab === 'finished'){
     app.appendChild(finishedSortBar());
+    if(tagBar) app.appendChild(tagBar);
+    if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
     if(state.finRec){ items = items.filter(function(e){ return e.recommend === true; }); }
     if(state.finSort === 'top'){
       items.sort(function(a,b){ return (b.rating||0)-(a.rating||0) || (b.finishedAt||0)-(a.finishedAt||0); });
@@ -1365,15 +1411,22 @@ function renderPane(){
       items.sort(function(a,b){ return (b.finishedAt||0)-(a.finishedAt||0); });
     }
     if(!items.length){
-      var e2 = el('div','empty');
-      e2.appendChild(el('b', null, 'No recommended tickets yet.'));
-      e2.appendChild(el('div','', 'Turn a review’s Recommend toggle on and it will show up here.'));
-      app.appendChild(e2);
+      if(state.finRec && !state.tagFilter){
+        var e2 = el('div','empty');
+        e2.appendChild(el('b', null, 'No recommended tickets yet.'));
+        e2.appendChild(el('div','', 'Turn a review’s Recommend toggle on and it will show up here.'));
+        app.appendChild(e2);
+      }else{
+        app.appendChild(filteredEmpty());
+      }
       return;
     }
     items.forEach(function(e){ app.appendChild(ticketCard(e)); });
     return;
   }
+
+  if(tagBar) app.appendChild(tagBar);
+  if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
 
   if(state.tab === 'wishlist'){
     // upcoming releases first (soonest on top), everything else by recently added
@@ -1387,9 +1440,37 @@ function renderPane(){
     });
   }
 
+  if(!items.length){ app.appendChild(filteredEmpty()); return; }
+
   var grid = el('div','grid');
   items.forEach(function(e){ grid.appendChild(titleCard(e)); });
   app.appendChild(grid);
+}
+
+function tagFilterBar(items){
+  var used = {};
+  items.forEach(function(e){ (e.tags||[]).forEach(function(t){ used[t]=true; }); });
+  var tags = Object.keys(used).sort(function(a,b){
+    var ai = DEFAULT_TAGS.indexOf(a); if(ai===-1) ai = 999;
+    var bi = DEFAULT_TAGS.indexOf(b); if(bi===-1) bi = 999;
+    if(ai !== bi) return ai - bi;
+    return a.localeCompare(b);
+  });
+  if(!tags.length) return null;
+  var bar = el('div','sortbar');
+  tags.forEach(function(tag){
+    var b = el('button','sort-chip' + (state.tagFilter===tag?' active':''), tag);
+    on(b, 'click', function(){ state.tagFilter = (state.tagFilter===tag) ? null : tag; rerender(); });
+    bar.appendChild(b);
+  });
+  return bar;
+}
+
+function filteredEmpty(){
+  var e = el('div','empty');
+  e.appendChild(el('b', null, 'No titles match this filter.'));
+  e.appendChild(el('div','', 'Try a different tag, or clear the filter above.'));
+  return e;
 }
 
 function finishedSortBar(){
@@ -1444,6 +1525,12 @@ function titleCard(entry){
     var chips = providerChips(entry, 'all', 3);
     if(chips){ chips.style.marginTop='8px'; meta.appendChild(chips); }
     else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent=releaseLabel(entry); meta.appendChild(none); }
+  }
+
+  if(entry.tags && entry.tags.length){
+    var tagsRow = el('div','tags-mini');
+    entry.tags.forEach(function(t){ tagsRow.appendChild(el('span','chip tag', t)); });
+    meta.appendChild(tagsRow);
   }
 
   // no action buttons on the card itself — tap the poster to open the detail,
@@ -2043,6 +2130,8 @@ function renderDetail(){
 
   d.appendChild(head);
 
+  renderTagEditor(d, entry);
+
   if(entry.type==='tv'){
     renderSeasons(d, entry);
   }else{
@@ -2055,6 +2144,32 @@ function renderDetail(){
   }
 
   app.appendChild(d);
+}
+
+function renderTagEditor(container, entry){
+  var box = el('div','tag-editor');
+  box.appendChild(el('div','section-label','Tags'));
+
+  var row = el('div','tags-row');
+  allKnownTags().forEach(function(tag){
+    var chip = el('button','tag-chip' + (entryHasTag(entry,tag)?' active':''), tag);
+    on(chip, 'click', function(){ toggleTag(entry, tag); rerender(); });
+    row.appendChild(chip);
+  });
+  box.appendChild(row);
+
+  var addRow = el('div','tag-add-row');
+  var input = el('input');
+  input.type = 'text'; input.placeholder = 'Custom tag…'; input.maxLength = 30;
+  addRow.appendChild(input);
+  var addBtn = el('button','mini-btn','+ Add');
+  function submit(){ if(addCustomTag(entry, input.value)) rerender(); }
+  on(addBtn, 'click', submit);
+  on(input, 'keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  addRow.appendChild(addBtn);
+  box.appendChild(addRow);
+
+  container.appendChild(box);
 }
 
 function renderMovieDetail(container, entry){
