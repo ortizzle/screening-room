@@ -111,7 +111,7 @@ header .rule{height:2px;background:linear-gradient(90deg,var(--gold),transparent
 .addflow-opt .lbl{flex:1;font-weight:800;font-size:16px;letter-spacing:.3px}
 .addflow-opt .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top:3px;letter-spacing:.2px}
 .addflow-opt .arr{color:var(--dim);font-size:20px;margin-left:8px}
-.addflow-tags{margin-top:18px}
+.addflow-tags{margin-bottom:18px}
 .addflow-tags .addflow-q{margin-bottom:10px}
 .addflow-tags .tags-row{justify-content:center}
 .addflow-cancel{
@@ -455,7 +455,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.4 · Tag on Add';
+var APP_VERSION = 'v1.5 · Marquee Share';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -988,29 +988,9 @@ function openAddFlow(base, panel, input){
   head.appendChild(mid);
   wrap.appendChild(head);
 
-  wrap.appendChild(el('div','addflow-q', 'Add to…'));
-
-  var opts = el('div','addflow-opts');
-  var choices = [
-    {status:'watching', cls:'watching', label:'Watching',         sub:'I’m watching this now'},
-    {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
-    {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
-  ];
+  // optional tag picker sits above the status buttons — tag first, then file it.
   // tags chosen here are applied the moment a status button is tapped
   var selectedTags = [];
-  choices.forEach(function(c){
-    var b = el('button','addflow-opt ' + c.cls);
-    var lbl = el('span','lbl');
-    lbl.appendChild(document.createTextNode(c.label));
-    lbl.appendChild(el('span','sub', c.sub));
-    b.appendChild(lbl);
-    b.appendChild(el('span','arr', '›'));
-    on(b, 'click', function(){ addTitle(base, c.status, panel, input, selectedTags); });
-    opts.appendChild(b);
-  });
-  wrap.appendChild(opts);
-
-  // optional tag picker — stays out of the way of the one-tap status path
   var tagWrap = el('div','addflow-tags');
   tagWrap.appendChild(el('div','addflow-q', 'Tag it (optional)'));
   var tagsRow = el('div','tags-row');
@@ -1025,6 +1005,26 @@ function openAddFlow(base, panel, input){
   });
   tagWrap.appendChild(tagsRow);
   wrap.appendChild(tagWrap);
+
+  wrap.appendChild(el('div','addflow-q', 'Add to…'));
+
+  var opts = el('div','addflow-opts');
+  var choices = [
+    {status:'watching', cls:'watching', label:'Watching',         sub:'I’m watching this now'},
+    {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
+    {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
+  ];
+  choices.forEach(function(c){
+    var b = el('button','addflow-opt ' + c.cls);
+    var lbl = el('span','lbl');
+    lbl.appendChild(document.createTextNode(c.label));
+    lbl.appendChild(el('span','sub', c.sub));
+    b.appendChild(lbl);
+    b.appendChild(el('span','arr', '›'));
+    on(b, 'click', function(){ addTitle(base, c.status, panel, input, selectedTags); });
+    opts.appendChild(b);
+  });
+  wrap.appendChild(opts);
 
   var cancel = el('button','addflow-cancel', 'Cancel');
   on(cancel, 'click', function(){ clear(panel); });
@@ -1443,6 +1443,7 @@ function renderPane(){
       return;
     }
     items.forEach(function(e){ app.appendChild(ticketCard(e)); });
+    app.appendChild(listShareBtn(items));
     return;
   }
 
@@ -1466,6 +1467,7 @@ function renderPane(){
   var grid = el('div','grid');
   items.forEach(function(e){ grid.appendChild(titleCard(e)); });
   app.appendChild(grid);
+  app.appendChild(listShareBtn(items));
 }
 
 function tagFilterBar(items){
@@ -1994,6 +1996,172 @@ function shareReport(btn, s){
       }
     }, 'image/png');
   });
+}
+
+/* ---------- shareable list image ("Coming Attractions" marquee) ---------- */
+function listShareTitle(){
+  if(state.tab==='watching') return 'NOW SHOWING';
+  if(state.tab==='wishlist') return 'COMING ATTRACTIONS';
+  return 'PAST SCREENINGS';
+}
+function listMetaLine(entry){
+  if(entry.status==='wishlist'){
+    var p = entry.providers||{};
+    if(p.stream && p.stream.length) return 'STREAMING ON ' + p.stream[0].toUpperCase();
+    if(isLikelyInTheaters(entry)) return 'IN THEATERS NOW';
+    return releaseLabel(entry).toUpperCase();
+  }
+  if(entry.status==='watching'){
+    if(entry.type==='tv'){
+      var nu = nextUnwatched(entry);
+      if(nu) return 'NEXT UP · S'+pad2(nu.season)+'E'+pad2(nu.ep);
+      if(totalEpisodes(entry)>0) return 'ALL CAUGHT UP';
+    }
+    return 'WATCHING NOW';
+  }
+  var bits = [starsStr(entry.rating)];
+  if(entry.recommend===true) bits.push('RECOMMENDED');
+  else if(entry.recommend===false) bits.push('SKIP IT');
+  return bits.join('  ·  ');
+}
+function fitText(ctx, text, maxW){
+  text = text || '';
+  if(ctx.measureText(text).width <= maxW) return text;
+  while(text.length && ctx.measureText(text+'…').width > maxW) text = text.slice(0,-1);
+  return text.replace(/\s+$/,'') + '…';
+}
+
+function drawMarquee(items, heading, subtitle){
+  var S = 2, W = 560, M = 16, padX = 28;
+  var shown = items.slice(0,12);
+  var extra = items.length - shown.length;
+  var headerH = 130, rowH = 56, extraH = extra>0 ? 28 : 0, footH = 44;
+  var H = M + headerH + shown.length*rowH + extraH + footH + M;
+  var canvas = document.createElement('canvas');
+  canvas.width = W*S; canvas.height = H*S;
+  var ctx = canvas.getContext('2d'); ctx.scale(S,S);
+
+  // velvet backdrop + warm glow + card (same stage dressing as the report)
+  ctx.fillStyle = '#1C1414'; ctx.fillRect(0,0,W,H);
+  var glow = ctx.createRadialGradient(W/2,-30,0, W/2,-30,W*0.75);
+  glow.addColorStop(0,'rgba(46,32,24,0.85)'); glow.addColorStop(1,'rgba(28,20,20,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
+  roundRect(ctx, M, M, W-2*M, H-2*M, 16);
+  ctx.fillStyle = '#261C1A'; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = '#453430'; ctx.stroke();
+
+  // header
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(217,164,65,0.8)'; ctx.font = '700 10px "Libre Franklin", sans-serif';
+  setLS(ctx,'3px'); ctx.fillText('ORTIZZLE SCREENING ROOM PRESENTS', W/2, M+34); setLS(ctx,'0px');
+  ctx.fillStyle = '#D9A441'; ctx.font = '800 30px Archivo, sans-serif';
+  setLS(ctx,'1px'); ctx.fillText(heading, W/2, M+72); setLS(ctx,'0px');
+  ctx.fillStyle = '#A08D7E'; ctx.font = '700 11px "Libre Franklin", sans-serif';
+  setLS(ctx,'2px'); ctx.fillText(subtitle, W/2, M+96); setLS(ctx,'0px');
+  var lg = ctx.createLinearGradient(M+padX,0,W-M-padX,0);
+  lg.addColorStop(0,'rgba(217,164,65,0)'); lg.addColorStop(0.5,'#D9A441'); lg.addColorStop(1,'rgba(217,164,65,0)');
+  ctx.fillStyle = lg; ctx.fillRect(M+padX, M+112, W-2*M-2*padX, 2);
+
+  // marquee lines
+  ctx.textAlign = 'left';
+  var idxX = M+padX, titleX = idxX+30, rightX = W-M-padX;
+  var top = M + headerH;
+  shown.forEach(function(e, i){
+    var titleBase = top + i*rowH + 26;
+    ctx.fillStyle = 'rgba(217,164,65,0.5)'; ctx.font = '800 12px Archivo, sans-serif';
+    ctx.fillText(pad2(i+1), idxX, titleBase);
+    var yearStr = e.year ? '  ·  '+e.year : '';
+    ctx.font = '700 11px "Libre Franklin", sans-serif';
+    var yearW = yearStr ? ctx.measureText(yearStr).width : 0;
+    ctx.font = '800 19px Archivo, sans-serif';
+    var t = fitText(ctx, (e.title||'').toUpperCase(), rightX - titleX - yearW);
+    ctx.fillStyle = '#D9A441';
+    ctx.fillText(t, titleX, titleBase);
+    if(yearStr){
+      var tw = ctx.measureText(t).width;
+      ctx.fillStyle = '#A08D7E'; ctx.font = '700 11px "Libre Franklin", sans-serif';
+      ctx.fillText(yearStr, titleX+tw, titleBase);
+    }
+    ctx.fillStyle = '#A08D7E'; ctx.font = '700 10px "Libre Franklin", sans-serif';
+    setLS(ctx,'1.5px');
+    ctx.fillText(fitText(ctx, listMetaLine(e), rightX - titleX), titleX, titleBase+19);
+    setLS(ctx,'0px');
+    if(i < shown.length-1){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(69,52,48,0.7)'; ctx.lineWidth = 1; ctx.setLineDash([2,5]);
+      ctx.beginPath(); ctx.moveTo(idxX, top+(i+1)*rowH-6); ctx.lineTo(rightX, top+(i+1)*rowH-6); ctx.stroke();
+      ctx.restore();
+    }
+  });
+
+  ctx.textAlign = 'center';
+  if(extra > 0){
+    ctx.fillStyle = '#A08D7E'; ctx.font = '700 10px "Libre Franklin", sans-serif';
+    setLS(ctx,'1.5px'); ctx.fillText('+ ' + extra + ' MORE ON THE LIST', W/2, top + shown.length*rowH + 14); setLS(ctx,'0px');
+  }
+  var shareDate = new Date().toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+  ctx.fillStyle = 'rgba(160,141,126,0.8)'; ctx.font = '700 9px "Libre Franklin", sans-serif';
+  setLS(ctx,'2px'); ctx.fillText('SHARED ' + shareDate.toUpperCase(), W/2, H-M-18); setLS(ctx,'0px');
+  ctx.textAlign = 'left';
+  return canvas;
+}
+
+function listShareText(items, heading){
+  var lines = [heading + ' 🎟'];
+  items.slice(0,12).forEach(function(e, i){
+    lines.push((i+1)+'. '+e.title + (e.year ? ' ('+e.year+')' : ''));
+  });
+  if(items.length > 12) lines.push('…and ' + (items.length-12) + ' more');
+  lines.push('— Ortizzle Screening Room');
+  return lines.join('\n');
+}
+
+function shareList(items, btn){
+  if(btn) btn.disabled = true;
+  var heading = listShareTitle();
+  var n = items.length;
+  var subtitle = (state.tagFilter ? state.tagFilter.toUpperCase() + ' · ' : '') + n + (n===1 ? ' TITLE' : ' TITLES');
+  var jobs = [];
+  if(document.fonts && document.fonts.load){
+    try{
+      jobs.push(document.fonts.load('800 30px Archivo'));
+      jobs.push(document.fonts.load('800 19px Archivo'));
+      jobs.push(document.fonts.load('800 12px Archivo'));
+      jobs.push(document.fonts.load('700 11px "Libre Franklin"'));
+      jobs.push(document.fonts.load('700 10px "Libre Franklin"'));
+    }catch(e){}
+  }
+  Promise.all(jobs).catch(function(){}).then(function(){
+    var canvas = drawMarquee(items, heading, subtitle);
+    canvas.toBlob(function(blob){
+      if(btn) btn.disabled = false;
+      if(!blob){ notice('Could not render the list image.'); return; }
+      var name = 'screening-room-' + (state.tab==='wishlist' ? 'waiting' : state.tab) + '-list.png';
+      var text = listShareText(items, heading);
+      var file = null;
+      try{ file = new File([blob], name, {type:'image/png'}); }catch(e){}
+      if(file && navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], text:text}).catch(function(err){
+          if(!err || err.name !== 'AbortError'){ downloadBlob(blob, name); }
+        });
+      }else if(navigator.share){
+        navigator.share({text:text}).then(function(){ downloadBlob(blob, name); notice('Image saved to share alongside.'); })
+          .catch(function(err){ if(!err || err.name !== 'AbortError'){ downloadBlob(blob, name); } });
+      }else{
+        downloadBlob(blob, name);
+        notice('List image saved to downloads.');
+      }
+    }, 'image/png');
+  });
+}
+
+function listShareBtn(items){
+  var cta = el('div','report-cta');
+  cta.style.marginTop = '24px';
+  var b = el('button','ghost-btn','↗ Share this list');
+  on(b, 'click', function(){ shareList(items, b); });
+  cta.appendChild(b);
+  return cta;
 }
 
 function ticketCard(entry){
