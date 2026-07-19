@@ -455,7 +455,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.5 · Marquee Share';
+var APP_VERSION = 'v1.6 · Sorted Marquee';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1413,6 +1413,30 @@ function renderTabs(){
   app.appendChild(tabs);
 }
 
+function hasAnyProvider(entry){
+  var p = entry.providers || {};
+  return !!((p.stream&&p.stream.length) || (p.rent&&p.rent.length) || (p.buy&&p.buy.length));
+}
+/* Waiting titles group into: 0 = coming soon (future release),
+   1 = available now (on a service), 2 = not yet available (released, no provider) */
+function wishlistBucket(entry){
+  if(entry.releaseDate){
+    var when = new Date(entry.releaseDate+'T00:00:00');
+    if(!isNaN(when.getTime()) && when > new Date()) return 0;
+  }
+  if(hasAnyProvider(entry)) return 1;
+  return 2;
+}
+function sortWishlist(items){
+  items.sort(function(a,b){
+    var ba = wishlistBucket(a), bb = wishlistBucket(b);
+    if(ba !== bb) return ba - bb;
+    if(ba === 0) return a.releaseDate.localeCompare(b.releaseDate); // soonest first
+    return (b.addedAt||0)-(a.addedAt||0);                           // recently added first
+  });
+  return items;
+}
+
 function renderPane(){
   var items = lib.filter(function(e){ return e.status === state.tab; });
   if(!items.length){ app.appendChild(emptyState(state.tab)); return; }
@@ -1451,15 +1475,8 @@ function renderPane(){
   if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
 
   if(state.tab === 'wishlist'){
-    // upcoming releases first (soonest on top), everything else by recently added
-    var today = new Date();
-    items.sort(function(a,b){
-      var fa = !!(a.releaseDate && new Date(a.releaseDate+'T00:00:00') > today);
-      var fb = !!(b.releaseDate && new Date(b.releaseDate+'T00:00:00') > today);
-      if(fa !== fb) return fa ? -1 : 1;
-      if(fa && fb) return a.releaseDate.localeCompare(b.releaseDate);
-      return (b.addedAt||0)-(a.addedAt||0);
-    });
+    // coming soon (soonest) → available now → not yet available
+    sortWishlist(items);
   }
 
   if(!items.length){ app.appendChild(filteredEmpty()); return; }
@@ -2008,7 +2025,14 @@ function listMetaLine(entry){
   if(entry.status==='wishlist'){
     var p = entry.providers||{};
     if(p.stream && p.stream.length) return 'STREAMING ON ' + p.stream[0].toUpperCase();
-    if(isLikelyInTheaters(entry)) return 'IN THEATERS NOW';
+    if((p.rent&&p.rent.length) || (p.buy&&p.buy.length)) return 'AVAILABLE TO RENT';
+    // a future release gets the countdown; only a released-but-unlanded title reads "in theaters"
+    var future = false;
+    if(entry.releaseDate){
+      var when = new Date(entry.releaseDate+'T00:00:00');
+      future = !isNaN(when.getTime()) && when > new Date();
+    }
+    if(!future && isLikelyInTheaters(entry)) return 'IN THEATERS NOW';
     return releaseLabel(entry).toUpperCase();
   }
   if(entry.status==='watching'){
@@ -2033,7 +2057,7 @@ function fitText(ctx, text, maxW){
 
 function drawMarquee(items, heading, subtitle){
   var S = 2, W = 560, M = 16, padX = 28;
-  var shown = items.slice(0,12);
+  var shown = items.slice(0,10);
   var extra = items.length - shown.length;
   var headerH = 130, rowH = 56, extraH = extra>0 ? 28 : 0, footH = 44;
   var H = M + headerH + shown.length*rowH + extraH + footH + M;
@@ -2108,10 +2132,10 @@ function drawMarquee(items, heading, subtitle){
 
 function listShareText(items, heading){
   var lines = [heading + ' 🎟'];
-  items.slice(0,12).forEach(function(e, i){
+  items.slice(0,10).forEach(function(e, i){
     lines.push((i+1)+'. '+e.title + (e.year ? ' ('+e.year+')' : ''));
   });
-  if(items.length > 12) lines.push('…and ' + (items.length-12) + ' more');
+  if(items.length > 10) lines.push('…and ' + (items.length-10) + ' more');
   lines.push('— Ortizzle Screening Room');
   return lines.join('\n');
 }
