@@ -111,6 +111,9 @@ header .rule{height:2px;background:linear-gradient(90deg,var(--gold),transparent
 .addflow-opt .lbl{flex:1;font-weight:800;font-size:16px;letter-spacing:.3px}
 .addflow-opt .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top:3px;letter-spacing:.2px}
 .addflow-opt .arr{color:var(--dim);font-size:20px;margin-left:8px}
+.addflow-tags{margin-top:18px}
+.addflow-tags .addflow-q{margin-bottom:10px}
+.addflow-tags .tags-row{justify-content:center}
 .addflow-cancel{
   display:block;margin:14px auto 0;background:none;border:none;color:var(--dim);
   font-size:13px;font-weight:600;padding:8px 16px;
@@ -452,7 +455,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.3 · Tags';
+var APP_VERSION = 'v1.4 · Tag on Add';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -993,6 +996,8 @@ function openAddFlow(base, panel, input){
     {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
     {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
   ];
+  // tags chosen here are applied the moment a status button is tapped
+  var selectedTags = [];
   choices.forEach(function(c){
     var b = el('button','addflow-opt ' + c.cls);
     var lbl = el('span','lbl');
@@ -1000,10 +1005,26 @@ function openAddFlow(base, panel, input){
     lbl.appendChild(el('span','sub', c.sub));
     b.appendChild(lbl);
     b.appendChild(el('span','arr', '›'));
-    on(b, 'click', function(){ addTitle(base, c.status, panel, input); });
+    on(b, 'click', function(){ addTitle(base, c.status, panel, input, selectedTags); });
     opts.appendChild(b);
   });
   wrap.appendChild(opts);
+
+  // optional tag picker — stays out of the way of the one-tap status path
+  var tagWrap = el('div','addflow-tags');
+  tagWrap.appendChild(el('div','addflow-q', 'Tag it (optional)'));
+  var tagsRow = el('div','tags-row');
+  allKnownTags().forEach(function(tag){
+    var chip = el('button','tag-chip', tag);
+    on(chip, 'click', function(){
+      var idx = selectedTags.indexOf(tag);
+      if(idx===-1){ selectedTags.push(tag); chip.classList.add('active'); }
+      else{ selectedTags.splice(idx,1); chip.classList.remove('active'); }
+    });
+    tagsRow.appendChild(chip);
+  });
+  tagWrap.appendChild(tagsRow);
+  wrap.appendChild(tagWrap);
 
   var cancel = el('button','addflow-cancel', 'Cancel');
   on(cancel, 'click', function(){ clear(panel); });
@@ -1013,10 +1034,10 @@ function openAddFlow(base, panel, input){
   panel.appendChild(box);
 }
 
-function addTitle(base, status, panel, input){
+function addTitle(base, status, panel, input, tags){
   var entry = {
     id: base.id, type: base.type, title: base.title, year: base.year, posterPath: base.posterPath,
-    status: status, tags: [],
+    status: status, tags: (tags||[]).slice(),
     seasons: base.type==='tv' ? [] : undefined,
     watched: base.type==='tv' ? {} : undefined,
     epRatings: base.type==='tv' ? {} : undefined,
