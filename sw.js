@@ -1,5 +1,5 @@
 /* Screening Room service worker — network-first app shell */
-var CACHE = 'sr-shell-v7'; // v1.6 · Sorted Marquee
+var CACHE = 'sr-shell-v8'; // v1.7 · Waiting Views
 
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(['./', './index.html']); }));

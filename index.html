@@ -455,7 +455,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.6 · Sorted Marquee';
+var APP_VERSION = 'v1.7 · Waiting Views';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -635,7 +635,7 @@ function notice(text){
 }
 
 /* ---------- view state ---------- */
-var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false, tagFilter:null }; // detail: {type,id}
+var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false, tagFilter:null, waitView:'all' }; // detail: {type,id}
 
 /* ========================================================= */
 /* SETUP / SETTINGS SCREEN                                    */
@@ -1407,7 +1407,7 @@ function renderTabs(){
     var b = el('button','tab' + (state.tab===t[0]?' active':''));
     b.appendChild(document.createTextNode(t[1]));
     b.appendChild(el('span','count', String(counts[t[0]])));
-    on(b, 'click', function(){ state.tab = t[0]; state.tagFilter = null; rerender(); });
+    on(b, 'click', function(){ state.tab = t[0]; state.tagFilter = null; state.waitView = 'all'; rerender(); });
     tabs.appendChild(b);
   });
   app.appendChild(tabs);
@@ -1417,24 +1417,47 @@ function hasAnyProvider(entry){
   var p = entry.providers || {};
   return !!((p.stream&&p.stream.length) || (p.rent&&p.rent.length) || (p.buy&&p.buy.length));
 }
-/* Waiting titles group into: 0 = coming soon (future release),
-   1 = available now (on a service), 2 = not yet available (released, no provider) */
+/* Waiting titles group into: 0 = in theaters now (released, in window, no service),
+   1 = coming soon (future release), 2 = streaming/available (on a service),
+   3 = catalog (released, no service, past the theatrical window) */
 function wishlistBucket(entry){
   if(entry.releaseDate){
     var when = new Date(entry.releaseDate+'T00:00:00');
-    if(!isNaN(when.getTime()) && when > new Date()) return 0;
+    if(!isNaN(when.getTime()) && when > new Date()) return 1; // coming soon
   }
-  if(hasAnyProvider(entry)) return 1;
-  return 2;
+  if(hasAnyProvider(entry)) return 2;        // on a service
+  if(isLikelyInTheaters(entry)) return 0;    // released, still in theaters
+  return 3;                                  // catalog / not yet landed
 }
+var WAIT_VIEWS = [
+  {key:'theaters',  label:'In theaters', bucket:0},
+  {key:'soon',      label:'Coming soon', bucket:1},
+  {key:'streaming', label:'Streaming',   bucket:2}
+];
 function sortWishlist(items){
   items.sort(function(a,b){
     var ba = wishlistBucket(a), bb = wishlistBucket(b);
     if(ba !== bb) return ba - bb;
-    if(ba === 0) return a.releaseDate.localeCompare(b.releaseDate); // soonest first
-    return (b.addedAt||0)-(a.addedAt||0);                           // recently added first
+    if(ba === 1) return a.releaseDate.localeCompare(b.releaseDate); // coming soon: soonest first
+    return (b.addedAt||0)-(a.addedAt||0);                           // otherwise recently added first
   });
   return items;
+}
+function waitViewBar(items){
+  var present = {};
+  items.forEach(function(e){ present[wishlistBucket(e)] = true; });
+  var avail = WAIT_VIEWS.filter(function(v){ return present[v.bucket]; });
+  if(avail.length < 2) return null; // nothing meaningful to split
+  var bar = el('div','sortbar');
+  var allChip = el('button','sort-chip' + (state.waitView==='all'?' active':''), 'All');
+  on(allChip, 'click', function(){ state.waitView = 'all'; rerender(); });
+  bar.appendChild(allChip);
+  avail.forEach(function(v){
+    var c = el('button','sort-chip' + (state.waitView===v.key?' active':''), v.label);
+    on(c, 'click', function(){ state.waitView = (state.waitView===v.key) ? 'all' : v.key; rerender(); });
+    bar.appendChild(c);
+  });
+  return bar;
 }
 
 function renderPane(){
@@ -1471,11 +1494,21 @@ function renderPane(){
     return;
   }
 
+  if(state.tab === 'wishlist'){
+    var viewBar = waitViewBar(items);
+    if(viewBar) app.appendChild(viewBar);
+    else state.waitView = 'all'; // bar hidden → never filter into emptiness
+  }
+
   if(tagBar) app.appendChild(tagBar);
   if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
 
   if(state.tab === 'wishlist'){
-    // coming soon (soonest) → available now → not yet available
+    if(state.waitView !== 'all'){
+      var want = {theaters:0, soon:1, streaming:2}[state.waitView];
+      items = items.filter(function(e){ return wishlistBucket(e) === want; });
+    }
+    // in theaters → coming soon (soonest) → streaming → catalog
     sortWishlist(items);
   }
 
@@ -2018,8 +2051,12 @@ function shareReport(btn, s){
 /* ---------- shareable list image ("Coming Attractions" marquee) ---------- */
 function listShareTitle(){
   if(state.tab==='watching') return 'NOW SHOWING';
-  if(state.tab==='wishlist') return 'COMING ATTRACTIONS';
-  return 'PAST SCREENINGS';
+  if(state.tab==='finished') return 'PAST SCREENINGS';
+  // wishlist — the heading names the active view
+  if(state.waitView==='theaters')  return 'NOW IN THEATERS';
+  if(state.waitView==='soon')      return 'COMING SOON';
+  if(state.waitView==='streaming') return 'NOW STREAMING';
+  return 'COMING ATTRACTIONS';
 }
 function listMetaLine(entry){
   if(entry.status==='wishlist'){
