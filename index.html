@@ -111,7 +111,7 @@ header .rule{height:2px;background:linear-gradient(90deg,var(--gold),transparent
 .addflow-opt .lbl{flex:1;font-weight:800;font-size:16px;letter-spacing:.3px}
 .addflow-opt .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top:3px;letter-spacing:.2px}
 .addflow-opt .arr{color:var(--dim);font-size:20px;margin-left:8px}
-.addflow-tags{margin-top:18px}
+.addflow-tags{margin-bottom:18px}
 .addflow-tags .addflow-q{margin-bottom:10px}
 .addflow-tags .tags-row{justify-content:center}
 .addflow-cancel{
@@ -988,29 +988,9 @@ function openAddFlow(base, panel, input){
   head.appendChild(mid);
   wrap.appendChild(head);
 
-  wrap.appendChild(el('div','addflow-q', 'Add to…'));
-
-  var opts = el('div','addflow-opts');
-  var choices = [
-    {status:'watching', cls:'watching', label:'Watching',         sub:'I’m watching this now'},
-    {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
-    {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
-  ];
+  // optional tag picker sits above the status buttons — tag first, then file it.
   // tags chosen here are applied the moment a status button is tapped
   var selectedTags = [];
-  choices.forEach(function(c){
-    var b = el('button','addflow-opt ' + c.cls);
-    var lbl = el('span','lbl');
-    lbl.appendChild(document.createTextNode(c.label));
-    lbl.appendChild(el('span','sub', c.sub));
-    b.appendChild(lbl);
-    b.appendChild(el('span','arr', '›'));
-    on(b, 'click', function(){ addTitle(base, c.status, panel, input, selectedTags); });
-    opts.appendChild(b);
-  });
-  wrap.appendChild(opts);
-
-  // optional tag picker — stays out of the way of the one-tap status path
   var tagWrap = el('div','addflow-tags');
   tagWrap.appendChild(el('div','addflow-q', 'Tag it (optional)'));
   var tagsRow = el('div','tags-row');
@@ -1025,6 +1005,26 @@ function openAddFlow(base, panel, input){
   });
   tagWrap.appendChild(tagsRow);
   wrap.appendChild(tagWrap);
+
+  wrap.appendChild(el('div','addflow-q', 'Add to…'));
+
+  var opts = el('div','addflow-opts');
+  var choices = [
+    {status:'watching', cls:'watching', label:'Watching',         sub:'I’m watching this now'},
+    {status:'wishlist', cls:'waiting',  label:'Waiting',          sub:'Want to watch it later'},
+    {status:'finished', cls:'finished', label:'Already finished', sub:'Rate & review it now'}
+  ];
+  choices.forEach(function(c){
+    var b = el('button','addflow-opt ' + c.cls);
+    var lbl = el('span','lbl');
+    lbl.appendChild(document.createTextNode(c.label));
+    lbl.appendChild(el('span','sub', c.sub));
+    b.appendChild(lbl);
+    b.appendChild(el('span','arr', '›'));
+    on(b, 'click', function(){ addTitle(base, c.status, panel, input, selectedTags); });
+    opts.appendChild(b);
+  });
+  wrap.appendChild(opts);
 
   var cancel = el('button','addflow-cancel', 'Cancel');
   on(cancel, 'click', function(){ clear(panel); });
