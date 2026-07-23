@@ -181,6 +181,17 @@ a.chip:hover{filter:brightness(1.2)}
 .sort-chip:hover{border-color:var(--gold)}
 .sort-chip.active{border-color:var(--gold);color:var(--gold)}
 
+/* segmented pill: single-choice view/sort chips fuse into one divided control,
+   so they read as one control while tag chips stay separate round pills */
+.seg{display:inline-flex;flex-wrap:nowrap}
+.seg .sort-chip{border-radius:0;margin-right:-1px;font-size:10px;letter-spacing:.6px;padding:8px 10px;white-space:nowrap}
+.seg .sort-chip:first-child{border-radius:99px 0 0 99px}
+.seg .sort-chip:last-child{border-radius:0 99px 99px 0;margin-right:0}
+.seg .sort-chip.active{position:relative;z-index:1}
+.sort-chip.tagf{border-color:rgba(217,164,65,.32);color:#C79A4F}
+.sort-chip.tagf:hover{border-color:var(--gold)}
+.sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
+
 /* tags: small display chips on cards + editable picker on detail */
 .tags-mini{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .chip.tag{border-color:rgba(217,164,65,.55);color:var(--gold)}
@@ -455,7 +466,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.8 · New Tag in Add';
+var APP_VERSION = 'v1.9 · Segmented Filters';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1481,14 +1492,16 @@ function waitViewBar(items){
   var avail = WAIT_VIEWS.filter(function(v){ return present[v.bucket]; });
   if(avail.length < 2) return null; // nothing meaningful to split
   var bar = el('div','sortbar');
+  var seg = el('div','seg');
   var allChip = el('button','sort-chip' + (state.waitView==='all'?' active':''), 'All');
   on(allChip, 'click', function(){ state.waitView = 'all'; rerender(); });
-  bar.appendChild(allChip);
+  seg.appendChild(allChip);
   avail.forEach(function(v){
     var c = el('button','sort-chip' + (state.waitView===v.key?' active':''), v.label);
     on(c, 'click', function(){ state.waitView = (state.waitView===v.key) ? 'all' : v.key; rerender(); });
-    bar.appendChild(c);
+    seg.appendChild(c);
   });
+  bar.appendChild(seg);
   return bar;
 }
 
@@ -1564,7 +1577,7 @@ function tagFilterBar(items){
   if(!tags.length) return null;
   var bar = el('div','sortbar');
   tags.forEach(function(tag){
-    var b = el('button','sort-chip' + (state.tagFilter===tag?' active':''), tag);
+    var b = el('button','sort-chip tagf' + (state.tagFilter===tag?' active':''), tag);
     on(b, 'click', function(){ state.tagFilter = (state.tagFilter===tag) ? null : tag; rerender(); });
     bar.appendChild(b);
   });
@@ -1580,11 +1593,15 @@ function filteredEmpty(){
 
 function finishedSortBar(){
   var bar = el('div','sortbar');
+  // the three sorts are one choice → one divided pill; Recommended is an
+  // independent on/off filter, so it stays a separate chip
+  var seg = el('div','seg');
   [['new','Newest'],['top','Top rated'],['az','A–Z']].forEach(function(s){
     var b = el('button','sort-chip' + (state.finSort===s[0]?' active':''), s[1]);
     on(b, 'click', function(){ state.finSort = s[0]; rerender(); });
-    bar.appendChild(b);
+    seg.appendChild(b);
   });
+  bar.appendChild(seg);
   var rec = el('button','sort-chip' + (state.finRec?' active':''), '👍 Recommended');
   on(rec, 'click', function(){ state.finRec = !state.finRec; rerender(); });
   bar.appendChild(rec);
