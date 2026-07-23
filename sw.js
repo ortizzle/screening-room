@@ -1,5 +1,5 @@
 /* Screening Room service worker — network-first app shell */
-var CACHE = 'sr-shell-v8'; // v1.7 · Waiting Views
+var CACHE = 'sr-shell-v9'; // v1.8 · New Tag in Add
 
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(['./', './index.html']); }));
