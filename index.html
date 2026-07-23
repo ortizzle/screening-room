@@ -181,6 +181,17 @@ a.chip:hover{filter:brightness(1.2)}
 .sort-chip:hover{border-color:var(--gold)}
 .sort-chip.active{border-color:var(--gold);color:var(--gold)}
 
+/* labeled filter groups — availability/sort rows vs tag rows read as distinct sets */
+.filter-group{margin:0 0 16px}
+.filter-group .sortbar{margin:0}
+.filter-label{
+  text-align:center;font-size:9px;font-weight:700;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--dim);opacity:.7;margin-bottom:7px;
+}
+.sort-chip.tagf{border-color:rgba(217,164,65,.32);color:#C79A4F}
+.sort-chip.tagf:hover{border-color:var(--gold)}
+.sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
+
 /* tags: small display chips on cards + editable picker on detail */
 .tags-mini{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .chip.tag{border-color:rgba(217,164,65,.55);color:var(--gold)}
@@ -455,7 +466,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.8 · New Tag in Add';
+var APP_VERSION = 'v1.9 · Labeled Filters';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1475,6 +1486,12 @@ function sortWishlist(items){
   });
   return items;
 }
+function labeledBar(label, bar){
+  var g = el('div','filter-group');
+  g.appendChild(el('div','filter-label', label));
+  g.appendChild(bar);
+  return g;
+}
 function waitViewBar(items){
   var present = {};
   items.forEach(function(e){ present[wishlistBucket(e)] = true; });
@@ -1489,7 +1506,7 @@ function waitViewBar(items){
     on(c, 'click', function(){ state.waitView = (state.waitView===v.key) ? 'all' : v.key; rerender(); });
     bar.appendChild(c);
   });
-  return bar;
+  return labeledBar('Showing', bar);
 }
 
 function renderPane(){
@@ -1564,11 +1581,11 @@ function tagFilterBar(items){
   if(!tags.length) return null;
   var bar = el('div','sortbar');
   tags.forEach(function(tag){
-    var b = el('button','sort-chip' + (state.tagFilter===tag?' active':''), tag);
+    var b = el('button','sort-chip tagf' + (state.tagFilter===tag?' active':''), tag);
     on(b, 'click', function(){ state.tagFilter = (state.tagFilter===tag) ? null : tag; rerender(); });
     bar.appendChild(b);
   });
-  return bar;
+  return labeledBar('Tags', bar);
 }
 
 function filteredEmpty(){
@@ -1588,7 +1605,7 @@ function finishedSortBar(){
   var rec = el('button','sort-chip' + (state.finRec?' active':''), '👍 Recommended');
   on(rec, 'click', function(){ state.finRec = !state.finRec; rerender(); });
   bar.appendChild(rec);
-  return bar;
+  return labeledBar('Sort', bar);
 }
 
 function emptyState(tab){
