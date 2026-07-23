@@ -455,7 +455,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.7 · Waiting Views';
+var APP_VERSION = 'v1.8 · New Tag in Add';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -994,16 +994,48 @@ function openAddFlow(base, panel, input){
   var tagWrap = el('div','addflow-tags');
   tagWrap.appendChild(el('div','addflow-q', 'Tag it (optional)'));
   var tagsRow = el('div','tags-row');
-  allKnownTags().forEach(function(tag){
-    var chip = el('button','tag-chip', tag);
+  function addChip(tag, selected){
+    var chip = el('button','tag-chip' + (selected?' active':''), tag);
     on(chip, 'click', function(){
       var idx = selectedTags.indexOf(tag);
       if(idx===-1){ selectedTags.push(tag); chip.classList.add('active'); }
       else{ selectedTags.splice(idx,1); chip.classList.remove('active'); }
     });
     tagsRow.appendChild(chip);
-  });
+    return chip;
+  }
+  allKnownTags().forEach(function(tag){ addChip(tag, false); });
   tagWrap.appendChild(tagsRow);
+
+  // create a brand-new tag right here — it's added selected, ready to file
+  var newRow = el('div','tag-add-row');
+  var newInput = el('input');
+  newInput.type = 'text'; newInput.placeholder = 'New tag…'; newInput.maxLength = 30;
+  newInput.autocomplete = 'off'; newInput.spellcheck = false;
+  newRow.appendChild(newInput);
+  var newBtn = el('button','mini-btn','+ Add');
+  function createTag(){
+    var t = newInput.value.trim().slice(0,30);
+    if(!t){ return; }
+    // reuse an existing chip if the tag already exists; else make a new one
+    var known = allKnownTags();
+    var exists = known.some(function(k){ return k.toLowerCase() === t.toLowerCase(); });
+    if(exists){
+      t = known.filter(function(k){ return k.toLowerCase() === t.toLowerCase(); })[0];
+    }
+    if(selectedTags.indexOf(t) === -1) selectedTags.push(t);
+    if(!exists) addChip(t, true);
+    else{
+      // find the existing chip and mark it active
+      var chips = tagsRow.querySelectorAll('.tag-chip');
+      for(var i=0;i<chips.length;i++){ if(chips[i].textContent === t){ chips[i].classList.add('active'); break; } }
+    }
+    newInput.value = '';
+  }
+  on(newBtn, 'click', createTag);
+  on(newInput, 'keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); createTag(); } });
+  newRow.appendChild(newBtn);
+  tagWrap.appendChild(newRow);
   wrap.appendChild(tagWrap);
 
   wrap.appendChild(el('div','addflow-q', 'Add to…'));
