@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Movie Night">
-<meta name="description" content="Family Movie Night — the Ortiz family's Friday-night memory book: picks, reactions, quotes, memories, stats, and trivia.">
+<meta name="description" content="Family Movie Night — the Ortiz family's Friday-night memory book: picks, reactions, quotes, memories, stats, trivia, and keepsakes.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&display=swap');
 
@@ -105,7 +105,6 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   width:64px;height:13px;margin:0 auto;background:#17101A;border-radius:0 0 8px 8px;
   box-shadow:0 4px 10px rgba(0,0,0,.4);
 }
-/* the movie is rolling: flicker, jitter, dust, film burns */
 .burn{
   position:absolute;width:120px;height:120px;border-radius:50%;pointer-events:none;z-index:2;
   background:radial-gradient(circle, rgba(255,150,50,.75) 0%, rgba(196,84,26,.45) 38%, rgba(120,40,10,.18) 62%, transparent 78%);
@@ -132,10 +131,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   89%{opacity:.82} 90%{opacity:1} 91.5%{opacity:.9} 92%{opacity:1}
   96%{opacity:.94} 97%{opacity:1}
 }
-@keyframes projjig{
-  0%,100%{transform:translate(0,0)}
-  50%{transform:translate(.5px,-.4px)}
-}
+@keyframes projjig{0%,100%{transform:translate(0,0)}50%{transform:translate(.5px,-.4px)}}
 @keyframes burnpop{
   0%,100%{opacity:0;transform:scale(.2)}
   2%{opacity:.85;transform:scale(.7)}
@@ -230,7 +226,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 .section-sub{font-size:11px;color:var(--dim);text-align:center;margin-bottom:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
 
-/* memory-book night cards with tape corners */
+/* memory-book night cards */
 .night{
   margin-top:22px;position:relative;background:var(--card);
   border:2px solid var(--line);border-radius:20px;padding:18px 14px 12px;
@@ -303,7 +299,7 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 .empty-state .big{font-size:34px}
 
-/* ============ SCRAPBOOK OVERLAY ============ */
+/* ============ KEEPSAKE OVERLAYS (scrapbook + yearbook) ============ */
 .scrap-overlay{
   position:fixed;inset:0;z-index:1100;overflow-y:auto;-webkit-overflow-scrolling:touch;
   background:var(--paper);
@@ -321,6 +317,13 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   width:44px;height:44px;border-radius:50%;border:none;background:#3A2A20;color:var(--cream);
   font-size:18px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.35);
 }
+.sp-print{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  margin:28px 0 6px;min-height:52px;border-radius:99px;border:none;
+  background:#3A2A20;color:var(--cream);font-family:'Baloo 2',sans-serif;
+  font-weight:800;font-size:16px;box-shadow:0 6px 18px rgba(74,53,32,.35);
+}
+.sp-print-hint{text-align:center;font-size:11px;color:#A3814F;font-weight:800;margin-bottom:6px}
 .sp-kicker{
   text-align:center;font-size:10px;letter-spacing:4px;text-transform:uppercase;font-weight:900;
   color:#A3814F;margin-top:8px;
@@ -344,52 +347,84 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   font-size:9px;font-weight:900;color:#fff;text-transform:uppercase;line-height:1.2;
 }
 .sp-polaroid .ph img{width:100%;height:100%;object-fit:cover}
-.sp-polaroid .cap{
-  font-family:'Caveat',cursive;font-size:17px;text-align:center;margin-top:7px;color:#5E4326;
-}
+.sp-polaroid .cap{font-family:'Caveat',cursive;font-size:17px;text-align:center;margin-top:7px;color:#5E4326}
 .sp-headside{display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:14px}
 .sp-avg{
   font-size:22px;color:#E2A93B;letter-spacing:2px;text-shadow:0 1px 0 rgba(74,53,32,.2);
   transform:rotate(1.5deg);font-weight:900;
 }
 .sp-avg small{display:block;font-family:'Caveat',cursive;font-size:16px;color:#8A6A44;letter-spacing:0;text-align:center}
-.sp-cluster{margin-top:30px;position:relative}
-.sp-name{
-  display:inline-block;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;
-  color:#fff;border-radius:8px;padding:5px 14px;transform:rotate(-1.5deg);
-  box-shadow:0 3px 8px rgba(74,53,32,.3);letter-spacing:.5px;
+
+/* by-question sections */
+.sp-section{margin-top:28px;page-break-inside:avoid}
+.sp-sec-title{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:13px;letter-spacing:2.5px;
+  text-transform:uppercase;color:#A3814F;display:flex;align-items:center;gap:10px;
 }
-.sp-stars{display:inline-block;margin-left:10px;color:#E2A93B;font-size:15px;letter-spacing:2px;font-weight:900}
-.sp-char{
-  margin-top:10px;font-family:'Caveat',cursive;font-size:19px;color:#5E4326;
-  transform:rotate(.6deg);
+.sp-sec-title::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,#D9C6A4,transparent);border-radius:2px}
+.sp-tag{
+  display:inline-block;font-weight:900;font-size:11px;color:#fff;border-radius:6px;
+  padding:2px 9px;margin-right:8px;vertical-align:1px;letter-spacing:.5px;
 }
+.sp-why{
+  margin-top:12px;background:#FFFDF6;border-radius:3px;padding:14px 16px;
+  box-shadow:0 5px 14px rgba(74,53,32,.22);transform:rotate(-.5deg);
+}
+.sp-why .why-text{font-family:'Caveat',cursive;font-weight:700;font-size:22px;line-height:1.3;margin-top:6px}
+.sp-rates{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.sp-rate{
+  background:#FFFDF6;border-radius:8px;padding:8px 11px;box-shadow:0 4px 10px rgba(74,53,32,.18);
+  font-weight:900;font-size:12px;display:flex;align-items:center;
+}
+.sp-rate .stars{color:#E2A93B;letter-spacing:1px;font-size:13px}
 .sp-note{
-  margin-top:10px;background:#FFFDF6;border-radius:3px;padding:13px 15px;
+  margin-top:12px;background:#FFFDF6;border-radius:3px;padding:12px 15px;
   box-shadow:0 5px 14px rgba(74,53,32,.22);font-size:14.5px;font-weight:600;line-height:1.55;
   color:#4A3520;font-style:italic;
 }
+.sp-char-line{margin-top:10px;font-family:'Caveat',cursive;font-size:21px;color:#4A3520;line-height:1.3}
 .sp-sticky{
   margin-top:12px;background:linear-gradient(180deg,#FFE9B8,#FFDF9E);border-radius:3px;
   padding:12px 15px 14px;box-shadow:0 5px 14px rgba(74,53,32,.22);
   font-family:'Caveat',cursive;font-weight:700;font-size:21px;line-height:1.25;color:#4A3520;
 }
+.sp-sticky .who-cap{display:block;font-size:15px;opacity:.7;margin-top:6px;text-align:right}
 .sp-strip{
   margin-top:12px;border-radius:3px;padding:11px 14px;position:relative;
   box-shadow:0 5px 14px rgba(74,53,32,.18);font-size:13.5px;font-weight:700;line-height:1.5;
+  color:#4A3520;
 }
 .sp-strip::before{
   content:'';position:absolute;top:-8px;left:14px;width:52px;height:15px;
   background:rgba(255,255,255,.5);border:1px solid rgba(74,53,32,.08);border-radius:2px;
   transform:rotate(-3deg);
 }
-.sp-waiting{
-  margin-top:30px;text-align:center;font-family:'Caveat',cursive;font-size:20px;color:#8A6A44;
+.sp-poll-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-weight:800;font-size:14px}
+.sp-poll-row .pq{flex:1}
+.sp-poll-row .tally{font-size:12px;color:#8A6A44;font-weight:900;margin-right:2px}
+.sp-pdots{display:flex;gap:4px}
+.sp-pdot{
+  width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;color:#fff;border:2px solid #D9C6A4;background:transparent;color:#B49670;
 }
+.sp-waiting{margin-top:30px;text-align:center;font-family:'Caveat',cursive;font-size:20px;color:#8A6A44}
 .sp-foot{
-  margin-top:34px;text-align:center;font-size:9px;letter-spacing:3px;text-transform:uppercase;
-  color:#B49670;font-weight:900;
+  margin-top:30px;text-align:center;font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  color:#B49670;font-weight:900;padding-bottom:10px;
 }
+
+/* yearbook extras */
+.yb-cover{text-align:center;padding:26px 0 8px;page-break-after:always}
+.yb-eyebrow{font-size:11px;letter-spacing:5px;text-transform:uppercase;font-weight:900;color:#A3814F}
+.yb-year{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:76px;line-height:1;color:#3A2A20;margin-top:10px}
+.yb-sub{font-family:'Caveat',cursive;font-size:26px;color:#8A6A44;margin-top:6px}
+.yb-stats{display:flex;justify-content:center;gap:14px;margin-top:24px;flex-wrap:wrap}
+.yb-stat{background:#FFFDF6;border-radius:10px;padding:12px 18px;box-shadow:0 5px 14px rgba(74,53,32,.2)}
+.yb-stat .n{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:24px;color:#3A2A20}
+.yb-stat .l{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:900;color:#A3814F;margin-top:2px}
+.yb-best{margin-top:22px;font-weight:800;font-size:14px;color:#4A3520}
+.yb-best b{color:#3A2A20}
+.yb-night{margin-top:40px;border-top:3px dashed #D9C6A4;padding-top:24px;page-break-inside:avoid}
 
 /* ============ STATS ============ */
 .stat-tiles{display:flex;gap:12px;margin-top:22px}
@@ -459,18 +494,42 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 .tq-done p{color:var(--dim);font-weight:700;margin-top:8px;font-size:14px}
 .tq-intro{margin-top:8px;text-align:center;font-size:13px;color:var(--dim);font-weight:700;line-height:1.6}
 
+/* ============ SETTINGS ============ */
+.set-card{
+  margin-top:16px;background:var(--card);border:2px solid var(--line);border-radius:18px;
+  padding:16px;
+}
+.set-title{
+  font-size:11px;letter-spacing:3px;color:var(--amber);text-transform:uppercase;font-weight:900;
+}
+.set-note{font-size:12.5px;color:var(--dim);font-weight:600;line-height:1.55;margin-top:8px}
+.set-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  min-height:50px;border-radius:14px;border:2px solid var(--line);
+  background:var(--card-2);color:var(--cream);font-weight:800;font-size:14px;margin-top:12px;
+}
+.set-btn:active{border-color:var(--amber)}
+.set-btn.warn{color:var(--coral)}
+.set-row{display:flex;gap:10px;margin-top:12px}
+.set-row .f-input{margin-top:0}
+.set-save{
+  flex-shrink:0;min-width:88px;min-height:50px;border:none;border-radius:14px;
+  background:linear-gradient(135deg,var(--amber),#FF9350);color:#3A2410;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;
+}
+
 /* ============ TAB BAR ============ */
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;gap:4px;
   background:rgba(28,20,27,.96);border-top:2px solid var(--line);
-  padding:7px 12px calc(7px + env(safe-area-inset-bottom));
+  padding:7px 10px calc(7px + env(safe-area-inset-bottom));
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
 .tabbar button{
   flex:1;min-height:54px;border:none;background:none;color:var(--dim);
-  font-weight:900;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;border-radius:14px;
+  font-weight:900;font-size:10px;letter-spacing:1px;text-transform:uppercase;border-radius:14px;
 }
-.tabbar button .ico{display:block;font-size:21px;margin-bottom:3px}
+.tabbar button .ico{display:block;font-size:20px;margin-bottom:3px}
 .tabbar button.active{color:var(--amber);background:rgba(255,180,84,.1)}
 
 /* modals */
@@ -510,6 +569,13 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 .f-input::placeholder,.f-area::placeholder{color:#6B5770}
 input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:none}
 .multi-list{display:flex;flex-direction:column;gap:8px}
+
+.poll-chips{display:flex;gap:8px}
+.poll-chip{
+  flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);
+  background:var(--card-2);font-weight:800;font-size:12.5px;color:var(--dim);line-height:1.3;
+}
+.poll-chip.on{background:rgba(255,180,84,.14);border-color:var(--amber);color:var(--amber)}
 
 .starpick{display:flex;justify-content:center;gap:2px}
 .starpick button{
@@ -564,10 +630,15 @@ footer{
   margin-top:44px;text-align:center;font-size:10px;color:#6B5770;letter-spacing:3px;
   text-transform:uppercase;line-height:2;font-weight:800;
 }
-footer button{
-  display:block;margin:10px auto 0;background:none;border:2px dashed var(--line);
-  color:var(--dim);border-radius:12px;padding:9px 16px;font-size:11px;letter-spacing:2px;
-  text-transform:uppercase;min-height:40px;font-weight:800;
+
+/* ============ PRINT (keepsake PDFs) ============ */
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#F8EEDC;padding:0}
+  .lights,.tabbar,.toast,#app{display:none !important}
+  .scrap-overlay{position:static;inset:auto;overflow:visible;padding:0;background:#F8EEDC}
+  .scrap-close,.sp-print,.sp-print-hint,.no-print{display:none !important}
+  .scrap-page{padding:20px 8px 0;max-width:none}
 }
 </style>
 </head>
@@ -580,12 +651,15 @@ footer button{
 <script>
 'use strict';
 /* =====================================================================
-   FAMILY MOVIE NIGHT — Ortiz Family · Prototype v0.5
-   Tabs: Nights (log + memory book + lineup), Stats, Trivia.
-   Reactions: stars, thought, favorite character, quotes[], memories[].
-   Night scrapbook: everyone's entries collaged onto one paper page.
-   Prototype: localStorage only. Gist family sync lands in v1.0 using
-   the shared safe-merge + tombstone pattern. Standalone app.
+   FAMILY MOVIE NIGHT — Ortiz Family · Prototype v0.6
+   Tabs: Nights / Stats / Trivia / Settings.
+   Reactions: stars, thought, favorite character, quotes[], memories[],
+   family poll (laughed/cried/watch again), and "why I picked it" for
+   the night's selector.
+   Keepsakes: per-night scrapbook (grouped by question) and a Year in
+   Review — both save to PDF via the print dialog. Settings has
+   export/import JSON backups.
+   Prototype: localStorage only. Gist family sync lands in v1.0.
    ===================================================================== */
 
 /* ---------- Arizona time helpers (canonical) ---------- */
@@ -660,7 +734,7 @@ function memberById(id){
   return MEMBERS[0];
 }
 
-/* ---------- TMDB (own key via Settings; standalone app) ---------- */
+/* ---------- TMDB ---------- */
 var TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
 function detectCred(raw){
   var t = (raw || '').trim();
@@ -729,7 +803,8 @@ function rxMemories(r){
   return r.memory ? [r.memory] : [];
 }
 function rxHasContent(r){
-  return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length || rxQuotes(r).length || rxMemories(r).length));
+  return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length ||
+    (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
 }
 function reactionsFor(nightId){
   var out = [];
@@ -776,32 +851,45 @@ function nightNearDate(dateStr){
   }
   return null;
 }
+function pollTally(nightId){
+  var t = { laughed:[], cried:[], rewatch:[], answered:0 };
+  MEMBERS.forEach(function(m){
+    var r = reactionFor(nightId, m.id);
+    if (r && r.poll){
+      t.answered++;
+      if (r.poll.laughed) t.laughed.push(m);
+      if (r.poll.cried) t.cried.push(m);
+      if (r.poll.rewatch) t.rewatch.push(m);
+    }
+  });
+  return t;
+}
 
-/* ---------- sample data (first run only; clearly flagged, one-tap clear) ---------- */
+/* ---------- sample data ---------- */
 function seedSample(){
   if (Store.get('seeded') || nights().length) return;
   var now = Date.now();
   var seeds = [
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
       rx: {
-        chris:  { stars:5, thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'] },
-        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'] },
-        sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'] },
-        river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'] }
+        chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true} },
+        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true} },
+        sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'], poll:{laughed:true, cried:false, rewatch:true} },
+        river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'], poll:{laughed:true, cried:false, rewatch:true} }
       } },
     { title:'Spider-Man: Into the Spider-Verse', year:2018, date:'2026-07-17', pickedBy:'kat', grad:'linear-gradient(160deg,#4A2E5E,#1E0E2A)',
       rx: {
-        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', character:'Miles Morales', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'] },
-        kat:    { stars:5, thought:'The soundtrack carried the whole pizza dinner.', character:'Spider-Gwen', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'] },
-        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', character:'Peni Parker', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'] },
-        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'] }
+        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', character:'Miles Morales', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'], poll:{laughed:true, cried:true, rewatch:true} },
+        kat:    { stars:5, why:'The art style is unlike anything else — I wanted us to see it together on the big TV.', thought:'The soundtrack carried the whole pizza dinner.', character:'Spider-Gwen', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'], poll:{laughed:true, cried:true, rewatch:true} },
+        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', character:'Peni Parker', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'], poll:{laughed:true, cried:false, rewatch:true} },
+        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'], poll:{laughed:true, cried:false, rewatch:true} }
       } },
     { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
       rx: {
-        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'] },
-        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'] },
-        sedona: { stars:4, thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'] },
-        river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'] }
+        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false} },
+        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true} },
+        sedona: { stars:4, why:'We needed a loud, funny one after a long week. Mission accomplished.', thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'], poll:{laughed:true, cried:false, rewatch:true} },
+        river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'], poll:{laughed:true, cried:false, rewatch:true} }
       } }
   ];
   for (var i=0;i<seeds.length;i++){
@@ -811,9 +899,10 @@ function seedSample(){
       pickedBy:s.pickedBy, grad:s.grad, sample:true, updatedAt: now };
     for (var m in s.rx){
       var rid = 'rx_' + nid + '_' + m;
+      var rx = s.rx[m];
       data.records[rid] = { id:rid, type:'reaction', nightId:nid, member:m,
-        stars:s.rx[m].stars, thought:s.rx[m].thought, character:s.rx[m].character,
-        quotes:s.rx[m].quotes, memories:s.rx[m].memories,
+        stars:rx.stars, why:rx.why || '', thought:rx.thought, character:rx.character,
+        quotes:rx.quotes, memories:rx.memories, poll:rx.poll,
         sample:true, updatedAt: now };
     }
   }
@@ -903,42 +992,6 @@ function confirmModal(opts){
     var ok = el('button','btn-primary', opts.confirmText || 'OK');
     ok.addEventListener('click', function(){ close(); if (opts.onConfirm) opts.onConfirm(); });
     row.appendChild(cancel); row.appendChild(ok);
-    box.appendChild(row);
-  });
-}
-
-/* ---------- settings ---------- */
-function openSettings(){
-  openModal(function(box, close){
-    box.appendChild(el('h3', null, 'Settings'));
-    box.appendChild(el('div','msub','Family Movie Night'));
-    box.appendChild(el('div','f-label','TMDB API key (posters & search)'));
-    var own = Store.get('tmdb_key');
-    var kInput = el('input','f-input');
-    kInput.type = 'password';
-    kInput.autocomplete = 'off';
-    kInput.placeholder = own ? 'Key saved — paste to replace' : 'Paste a free TMDB API key';
-    box.appendChild(kInput);
-    var note = el('p', null, own
-      ? 'A key is saved on this phone. Posters and movie search are on.'
-      : (loadTmdbCred()
-        ? 'Using a key already saved on this phone. Save one here to make this app fully standalone.'
-        : 'Without a key the app still works — you just type titles in by hand. Keys are free at themoviedb.org.'));
-    box.appendChild(note);
-    box.appendChild(el('p', null, 'Family sync across phones arrives in v1.0 — a shared token will live here too.'));
-    var row = el('div','modal-buttons');
-    var cancel = el('button','btn-secondary','Close');
-    cancel.addEventListener('click', close);
-    var save = el('button','btn-primary','Save');
-    save.addEventListener('click', function(){
-      var v = kInput.value.trim();
-      if (!v){ close(); return; }
-      Store.set('tmdb_key', v);
-      close();
-      render();
-      toast('TMDB key saved 🎬');
-    });
-    row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
   });
 }
@@ -1106,6 +1159,11 @@ function openAddNight(){
 function openReaction(night, member){
   var existing = reactionFor(night.id, member.id);
   var stars = existing ? existing.stars : 0;
+  var isPicker = night.pickedBy === member.id;
+  var poll = existing && existing.poll ? {
+    laughed: !!existing.poll.laughed, cried: !!existing.poll.cried, rewatch: !!existing.poll.rewatch
+  } : { laughed:false, cried:false, rewatch:false };
+
   openModal(function(box, close){
     var h = el('h3', null, member.name + '’s Reaction');
     h.style.color = member.color;
@@ -1136,6 +1194,16 @@ function openReaction(night, member){
     paintStars();
     box.appendChild(sp);
     box.appendChild(hint);
+
+    /* director's intro — only for the picker */
+    var why = null;
+    if (isPicker){
+      box.appendChild(el('div','f-label','🎬 Director’s intro — why this movie?'));
+      why = el('textarea','f-area');
+      why.placeholder = 'Tell the family why you picked tonight’s film…';
+      why.value = existing ? (existing.why || '') : '';
+      box.appendChild(why);
+    }
 
     box.appendChild(el('div','f-label','What did you think?'));
     var thought = el('textarea','f-area');
@@ -1191,6 +1259,24 @@ function openReaction(night, member){
     moreM.addEventListener('click', function(){ addMemInput('').focus(); });
     box.appendChild(moreM);
 
+    /* the family poll */
+    box.appendChild(el('div','f-label','🗳 The family poll'));
+    var pollRow = el('div','poll-chips');
+    [
+      { key:'laughed', label:'😂 I laughed' },
+      { key:'cried',   label:'😢 I cried' },
+      { key:'rewatch', label:'🔁 Again!' }
+    ].forEach(function(pq){
+      var c = el('button','poll-chip' + (poll[pq.key] ? ' on' : ''), pq.label);
+      c.type = 'button';
+      c.addEventListener('click', function(){
+        poll[pq.key] = !poll[pq.key];
+        c.classList.toggle('on', poll[pq.key]);
+      });
+      pollRow.appendChild(c);
+    });
+    box.appendChild(pollRow);
+
     var row = el('div','modal-buttons');
     var cancel = el('button','btn-secondary','Cancel');
     cancel.addEventListener('click', close);
@@ -1209,8 +1295,9 @@ function openReaction(night, member){
       var id = 'rx_' + night.id + '_' + member.id;
       data.records[id] = {
         id:id, type:'reaction', nightId:night.id, member:member.id,
-        stars:stars, thought:thought.value.trim(), character:character.value.trim(),
-        quotes:quotes, memories:memories,
+        stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
+        thought:thought.value.trim(), character:character.value.trim(),
+        quotes:quotes, memories:memories, poll:poll,
         updatedAt: Date.now()
       };
       saveData();
@@ -1244,14 +1331,171 @@ function deleteNight(night){
   });
 }
 
-/* ---------- SCRAPBOOK PAGE ---------- */
-function openScrapbook(night){
+/* ---------- KEEPSAKE BUILDERS (shared by scrapbook + yearbook) ---------- */
+function spTag(m){
+  var t = el('span','sp-tag', m.name);
+  t.style.background = m.onWhite;
+  return t;
+}
+function spSection(title){
+  var s = el('div','sp-section');
+  s.appendChild(el('div','sp-sec-title', title));
+  return s;
+}
+/* renders the by-question groups for one night into container */
+function buildNightKeepsake(container, night){
+  var rots = [-1.4, 1.1, -0.7, 1.6];
+  var picker = memberById(night.pickedBy);
+  var pickerRx = reactionFor(night.id, picker.id);
+
+  /* why the picker chose it */
+  if (pickerRx && pickerRx.why){
+    var whySec = spSection('🎬 Why ' + picker.name + ' picked it');
+    var why = el('div','sp-why');
+    why.appendChild(spTag(picker));
+    why.appendChild(el('div','why-text','“' + pickerRx.why + '”'));
+    whySec.appendChild(why);
+    container.appendChild(whySec);
+  }
+
+  /* ratings */
+  var rated = MEMBERS.filter(function(m){
+    var r = reactionFor(night.id, m.id);
+    return r && r.stars > 0;
+  });
+  if (rated.length){
+    var rateSec = spSection('⭐ Our ratings');
+    var rates = el('div','sp-rates');
+    rated.forEach(function(m){
+      var r = reactionFor(night.id, m.id);
+      var box = el('div','sp-rate');
+      box.appendChild(spTag(m));
+      box.appendChild(el('span','stars', starString(r.stars)));
+      rates.appendChild(box);
+    });
+    rateSec.appendChild(rates);
+    container.appendChild(rateSec);
+  }
+
+  /* what we thought */
+  var thoughts = MEMBERS.filter(function(m){
+    var r = reactionFor(night.id, m.id);
+    return r && r.thought;
+  });
+  if (thoughts.length){
+    var thoSec = spSection('💭 What we thought');
+    thoughts.forEach(function(m, i){
+      var r = reactionFor(night.id, m.id);
+      var note = el('div','sp-note');
+      note.appendChild(spTag(m));
+      note.appendChild(document.createTextNode(' “' + r.thought + '”'));
+      note.style.transform = 'rotate(' + (rots[i % 4] * 0.5) + 'deg)';
+      thoSec.appendChild(note);
+    });
+    container.appendChild(thoSec);
+  }
+
+  /* favorite characters */
+  var chars = MEMBERS.filter(function(m){
+    var r = reactionFor(night.id, m.id);
+    return r && r.character;
+  });
+  if (chars.length){
+    var chSec = spSection('🌟 Favorite characters');
+    chars.forEach(function(m){
+      var r = reactionFor(night.id, m.id);
+      var line = el('div','sp-char-line');
+      line.appendChild(spTag(m));
+      line.appendChild(document.createTextNode(' ' + r.character));
+      chSec.appendChild(line);
+    });
+    container.appendChild(chSec);
+  }
+
+  /* quotes */
+  var anyQuotes = false;
+  var qSec = spSection('💬 Quotes we kept');
+  var qi = 0;
+  MEMBERS.forEach(function(m){
+    var r = reactionFor(night.id, m.id);
+    rxQuotes(r).forEach(function(q){
+      anyQuotes = true;
+      var st = el('div','sp-sticky');
+      st.appendChild(document.createTextNode('“' + q + '”'));
+      st.appendChild(el('span','who-cap','— ' + m.name));
+      st.style.transform = 'rotate(' + rots[qi % 4] + 'deg)';
+      qSec.appendChild(st);
+      qi++;
+    });
+  });
+  if (anyQuotes) container.appendChild(qSec);
+
+  /* memories */
+  var anyMems = false;
+  var mSec = spSection('📌 Memories from the couch');
+  var mi = 0;
+  MEMBERS.forEach(function(m){
+    var r = reactionFor(night.id, m.id);
+    rxMemories(r).forEach(function(mem){
+      anyMems = true;
+      var strip = el('div','sp-strip');
+      strip.style.background = m.paper;
+      strip.appendChild(spTag(m));
+      strip.appendChild(document.createTextNode(' ' + mem));
+      strip.style.transform = 'rotate(' + (rots[(mi+2) % 4] * 0.7) + 'deg)';
+      mSec.appendChild(strip);
+      mi++;
+    });
+  });
+  if (anyMems) container.appendChild(mSec);
+
+  /* the family poll */
+  var tally = pollTally(night.id);
+  if (tally.answered){
+    var pSec = spSection('🗳 The family poll');
+    [
+      { label:'😂 Did we laugh?', list:tally.laughed },
+      { label:'😢 Did we cry?', list:tally.cried },
+      { label:'🔁 Watch it again?', list:tally.rewatch }
+    ].forEach(function(pq){
+      var row = el('div','sp-poll-row');
+      row.appendChild(el('span','pq', pq.label));
+      row.appendChild(el('span','tally', pq.list.length + '/' + tally.answered));
+      var dots = el('span','sp-pdots');
+      MEMBERS.forEach(function(m){
+        var yes = pq.list.indexOf(m) !== -1;
+        var d = el('span','sp-pdot', m.name.charAt(0));
+        if (yes){
+          d.style.background = m.onWhite;
+          d.style.borderColor = m.onWhite;
+          d.style.color = '#fff';
+        }
+        dots.appendChild(d);
+      });
+      row.appendChild(dots);
+      pSec.appendChild(row);
+    });
+    container.appendChild(pSec);
+  }
+}
+function keepsakeOverlay(){
   var overlay = el('div','scrap-overlay');
   var closeBtn = el('button','scrap-close','✕');
-  closeBtn.setAttribute('aria-label','Close scrapbook');
+  closeBtn.setAttribute('aria-label','Close');
   closeBtn.addEventListener('click', function(){ overlay.remove(); });
   overlay.appendChild(closeBtn);
+  return overlay;
+}
+function printButton(page){
+  var pb = el('button','sp-print','🖨️ Save as PDF keepsake');
+  pb.addEventListener('click', function(){ window.print(); });
+  page.appendChild(pb);
+  page.appendChild(el('div','sp-print-hint','In the print dialog choose “Save as PDF” — that file is the keepsake.'));
+}
 
+/* ---------- night scrapbook overlay ---------- */
+function openScrapbook(night){
+  var overlay = keepsakeOverlay();
   var page = el('div','scrap-page');
   var picker = memberById(night.pickedBy);
 
@@ -1296,51 +1540,130 @@ function openScrapbook(night){
   head.appendChild(side);
   page.appendChild(head);
 
-  var waiting = [];
-  var idx = 0;
-  MEMBERS.forEach(function(m){
-    var r = reactionFor(night.id, m.id);
-    if (!rxHasContent(r)){ waiting.push(m.name); return; }
-    var cluster = el('div','sp-cluster');
-    var rots = [-1.6, 1.2, -0.8, 1.8];
+  buildNightKeepsake(page, night);
 
-    var nameTag = el('span','sp-name', m.name);
-    nameTag.style.background = m.onWhite;
-    nameTag.style.transform = 'rotate(' + rots[idx % 4] + 'deg)';
-    cluster.appendChild(nameTag);
-    if (r.stars) cluster.appendChild(el('span','sp-stars', starString(r.stars)));
-
-    if (r.character){
-      cluster.appendChild(el('div','sp-char', '⭐ Starring favorite: ' + r.character));
-    }
-    if (r.thought){
-      var note = el('div','sp-note', '“' + r.thought + '”');
-      note.style.transform = 'rotate(' + (rots[(idx+1) % 4] * 0.6) + 'deg)';
-      cluster.appendChild(note);
-    }
-    rxQuotes(r).forEach(function(q, qi){
-      var st = el('div','sp-sticky', '“' + q + '”');
-      st.style.transform = 'rotate(' + (rots[(idx+qi) % 4]) + 'deg)';
-      cluster.appendChild(st);
-    });
-    rxMemories(r).forEach(function(mem, mi){
-      var strip = el('div','sp-strip', '📌 ' + mem);
-      strip.style.background = m.paper;
-      strip.style.color = '#4A3520';
-      strip.style.transform = 'rotate(' + (rots[(idx+mi+2) % 4] * 0.7) + 'deg)';
-      cluster.appendChild(strip);
-    });
-    page.appendChild(cluster);
-    idx++;
-  });
-
+  var waiting = MEMBERS.filter(function(m){ return !rxHasContent(reactionFor(night.id, m.id)); });
   if (waiting.length){
-    page.appendChild(el('div','sp-waiting', 'still waiting on ' + waiting.join(' & ') + ' … 🍿'));
+    page.appendChild(el('div','sp-waiting',
+      'still waiting on ' + waiting.map(function(m){ return m.name; }).join(' & ') + ' … 🍿'));
   }
+  printButton(page);
   page.appendChild(el('div','sp-foot','The Ortiz Family · est. Fridays'));
 
   overlay.appendChild(page);
   document.body.appendChild(overlay);
+}
+
+/* ---------- YEAR IN REVIEW keepsake ---------- */
+function openYearbook(year){
+  var yearNights = nights().filter(function(n){ return n.date.slice(0,4) === String(year); })
+    .sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+  if (!yearNights.length){ toast('No movie nights logged in ' + year + ' yet'); return; }
+
+  var overlay = keepsakeOverlay();
+  var page = el('div','scrap-page');
+
+  /* cover */
+  var cover = el('div','yb-cover');
+  cover.appendChild(el('div','yb-eyebrow','The Ortiz Family Presents'));
+  cover.appendChild(el('div','sp-title','Family Movie Night'));
+  cover.appendChild(el('div','yb-year', String(year)));
+  cover.appendChild(el('div','yb-sub','a year on the couch, together'));
+
+  var avgs = [];
+  var quoteCount = 0, memCount = 0;
+  var best = null;
+  yearNights.forEach(function(n){
+    var a = familyAvg(n.id);
+    if (a !== null){
+      avgs.push(a);
+      if (!best || a > best.avg) best = { n:n, avg:a };
+    }
+    MEMBERS.forEach(function(m){
+      var r = reactionFor(n.id, m.id);
+      quoteCount += rxQuotes(r).length;
+      memCount += rxMemories(r).length;
+    });
+  });
+  var stats = el('div','yb-stats');
+  [
+    { n:String(yearNights.length), l:'movie nights' },
+    { n:avgs.length ? (avgs.reduce(function(a,b){return a+b;},0)/avgs.length).toFixed(1) + '★' : '—', l:'avg family score' },
+    { n:String(quoteCount), l:'quotes kept' },
+    { n:String(memCount), l:'memories saved' }
+  ].forEach(function(s){
+    var t = el('div','yb-stat');
+    t.appendChild(el('div','n', s.n));
+    t.appendChild(el('div','l', s.l));
+    stats.appendChild(t);
+  });
+  cover.appendChild(stats);
+  if (best){
+    var b = el('div','yb-best');
+    b.appendChild(document.createTextNode('🏆 Highest-rated night: '));
+    b.appendChild(el('b', null, best.n.title));
+    b.appendChild(document.createTextNode(' (' + best.avg.toFixed(1) + '★, ' + memberById(best.n.pickedBy).name + '’s pick)'));
+    cover.appendChild(b);
+  }
+  printButton(cover);
+  page.appendChild(cover);
+
+  /* one section per night, chronological */
+  yearNights.forEach(function(n){
+    var sec = el('div','yb-night');
+    var picker = memberById(n.pickedBy);
+    sec.appendChild(el('div','sp-kicker', AZ.prettyLong(n.date)));
+    sec.appendChild(el('div','sp-title', n.title));
+    var avg = familyAvg(n.id);
+    sec.appendChild(el('div','sp-date',
+      picker.name + '’s pick' + (n.year ? ' · ' + n.year : '') + (avg !== null ? ' · family score ' + avg.toFixed(1) + '★' : '')));
+    buildNightKeepsake(sec, n);
+    page.appendChild(sec);
+  });
+
+  page.appendChild(el('div','sp-foot','The Ortiz Family · ' + year + ' · est. Fridays'));
+  overlay.appendChild(page);
+  document.body.appendChild(overlay);
+}
+
+/* ---------- export / import ---------- */
+function exportBackup(){
+  try {
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'family-movie-night-backup-' + AZ.today() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    toast('Backup exported 📦');
+  } catch(e){
+    toast('Export failed — try again');
+  }
+}
+function importBackup(file){
+  var reader = new FileReader();
+  reader.onload = function(){
+    try {
+      var incoming = JSON.parse(reader.result);
+      if (!incoming || typeof incoming.records !== 'object') throw new Error('bad shape');
+      var added = 0, updated = 0;
+      for (var id in incoming.records){
+        var rec = incoming.records[id];
+        if (!rec || !rec.id) continue;
+        var local = data.records[id];
+        if (!local){ data.records[id] = rec; added++; }
+        else if ((rec.updatedAt || 0) > (local.updatedAt || 0)){ data.records[id] = rec; updated++; }
+      }
+      saveData();
+      render();
+      toast('Imported: ' + added + ' new, ' + updated + ' updated ✓');
+    } catch(e){
+      toast('That file doesn’t look like a Movie Night backup');
+    }
+  };
+  reader.readAsText(file);
 }
 
 /* ---------- TRIVIA ---------- */
@@ -1381,7 +1704,7 @@ function shuffledOrder(n){
   return arr;
 }
 
-/* ---------- RENDER: shared header ---------- */
+/* ---------- RENDER: shared ---------- */
 var view = 'home';
 var quoteIndex = 0;
 
@@ -1397,14 +1720,14 @@ function renderHeader(app){
   header.appendChild(doo);
   app.appendChild(header);
 }
-
 function renderTabbar(){
   var bar = document.getElementById('tabbar');
   while (bar.firstChild) bar.removeChild(bar.firstChild);
   [
-    { id:'home',   ico:'🍿', label:'Nights' },
-    { id:'stats',  ico:'🏆', label:'Stats' },
-    { id:'trivia', ico:'🎯', label:'Trivia' }
+    { id:'home',     ico:'🍿', label:'Nights' },
+    { id:'stats',    ico:'🏆', label:'Stats' },
+    { id:'trivia',   ico:'🎯', label:'Trivia' },
+    { id:'settings', ico:'⚙️', label:'Settings' }
   ].forEach(function(t){
     var b = el('button', view === t.id ? 'active' : '');
     b.appendChild(el('span','ico', t.ico));
@@ -1420,7 +1743,6 @@ function renderTabbar(){
 
 /* ---------- RENDER: home ---------- */
 function renderHome(app){
-  /* projector screen — up next, "now playing" */
   var np = nextPicker();
   var sb = el('div','screenbox');
   var screen = el('div','screen');
@@ -1525,7 +1847,6 @@ function renderHome(app){
     app.appendChild(qw);
   }
 
-  /* log button */
   var logBtn = el('button','log-btn','🍿 Log a Movie Night');
   logBtn.addEventListener('click', openAddNight);
   app.appendChild(logBtn);
@@ -1628,24 +1949,8 @@ function renderHome(app){
     app.appendChild(card);
   });
 
-  /* footer */
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.5'));
-  var st = el('button', null, '⚙︎ Settings');
-  st.addEventListener('click', openSettings);
-  footer.appendChild(st);
-  if (hasSample()){
-    var cs = el('button', null, 'Clear sample data');
-    cs.addEventListener('click', function(){
-      confirmModal({
-        title:'Clear the sample nights?',
-        message:'The three demo nights and their reactions will be removed so you can start fresh.',
-        confirmText:'Clear them',
-        onConfirm: clearSample
-      });
-    });
-    footer.appendChild(cs);
-  }
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.6'));
   app.appendChild(footer);
 }
 
@@ -1710,8 +2015,6 @@ function renderStats(app){
   app.appendChild(tiles);
 
   var stats = memberStats();
-
-  /* superlative badges */
   var critic = null, pleaser = null;
   MEMBERS.forEach(function(m){
     var s = stats[m.id];
@@ -1756,8 +2059,7 @@ function renderStats(app){
       ph.appendChild(document.createTextNode('🎬 Picked: '));
       s.picks.forEach(function(n, i){
         var avg = familyAvg(n.id);
-        var b = el('b', null, n.title);
-        ph.appendChild(b);
+        ph.appendChild(el('b', null, n.title));
         ph.appendChild(document.createTextNode(avg !== null ? ' (' + avg.toFixed(1) + '★)' : ''));
         if (i < s.picks.length - 1) ph.appendChild(document.createTextNode(' · '));
       });
@@ -1766,7 +2068,6 @@ function renderStats(app){
     app.appendChild(card);
   });
 
-  /* biggest split decision */
   var split = null;
   list.forEach(function(n){
     var rs = reactionsFor(n.id).filter(function(r){ return r.stars > 0; });
@@ -1873,6 +2174,101 @@ function renderTrivia(app){
   app.appendChild(foot);
 }
 
+/* ---------- RENDER: settings ---------- */
+function renderSettings(app){
+  app.appendChild(el('div','section-label','Settings & Keepsakes'));
+  app.appendChild(el('div','section-sub','The projection booth ⚙️'));
+
+  /* keepsakes */
+  var ks = el('div','set-card');
+  ks.appendChild(el('div','set-title','📕 Year in Review keepsakes'));
+  var years = {};
+  nights().forEach(function(n){ years[n.date.slice(0,4)] = true; });
+  var yearList = Object.keys(years).sort().reverse();
+  if (yearList.length){
+    ks.appendChild(el('div','set-note','Every night of the year on one printable scrapbook — open it, then “Save as PDF.” A perfect end-of-year keepsake.'));
+    yearList.forEach(function(y){
+      var b = el('button','set-btn','📖 Open the ' + y + ' Year in Review');
+      b.addEventListener('click', function(){ openYearbook(y); });
+      ks.appendChild(b);
+    });
+  } else {
+    ks.appendChild(el('div','set-note','Log some movie nights and your Year in Review will appear here.'));
+  }
+  app.appendChild(ks);
+
+  /* data safety */
+  var ds = el('div','set-card');
+  ds.appendChild(el('div','set-title','💾 Backups (safe keeping)'));
+  ds.appendChild(el('div','set-note','Export saves everything — nights, reactions, quotes, memories — to a file you can keep in iCloud/Files. Import merges a backup in without losing newer entries.'));
+  var ex = el('button','set-btn','📦 Export backup file');
+  ex.addEventListener('click', exportBackup);
+  ds.appendChild(ex);
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json,application/json';
+  fileInput.style.display = 'none';
+  fileInput.addEventListener('change', function(){
+    if (fileInput.files && fileInput.files[0]) importBackup(fileInput.files[0]);
+    fileInput.value = '';
+  });
+  ds.appendChild(fileInput);
+  var im = el('button','set-btn','📥 Import backup file');
+  im.addEventListener('click', function(){ fileInput.click(); });
+  ds.appendChild(im);
+  ds.appendChild(el('div','set-note','Family sync across all four phones arrives in v1.0 — backups are the seatbelt either way.'));
+  app.appendChild(ds);
+
+  /* tmdb key */
+  var tk = el('div','set-card');
+  tk.appendChild(el('div','set-title','🎬 TMDB key (posters & search)'));
+  var own = Store.get('tmdb_key');
+  tk.appendChild(el('div','set-note', own
+    ? 'A key is saved on this phone — posters and movie search are on.'
+    : (loadTmdbCred()
+      ? 'Using a key already saved on this phone. Save one here to make this app fully standalone.'
+      : 'Optional: without a key you just type titles by hand. Free keys at themoviedb.org.')));
+  var rowk = el('div','set-row');
+  var kInput = el('input','f-input');
+  kInput.type = 'password';
+  kInput.autocomplete = 'off';
+  kInput.placeholder = own ? 'Key saved — paste to replace' : 'Paste TMDB API key';
+  rowk.appendChild(kInput);
+  var kSave = el('button','set-save','Save');
+  kSave.addEventListener('click', function(){
+    var v = kInput.value.trim();
+    if (!v) return;
+    Store.set('tmdb_key', v);
+    render();
+    toast('TMDB key saved 🎬');
+  });
+  rowk.appendChild(kSave);
+  tk.appendChild(rowk);
+  app.appendChild(tk);
+
+  /* sample data */
+  if (hasSample()){
+    var sd = el('div','set-card');
+    sd.appendChild(el('div','set-title','🧪 Sample data'));
+    sd.appendChild(el('div','set-note','The three demo nights are still in the memory book so you can explore.'));
+    var cs = el('button','set-btn warn','🧹 Clear sample data');
+    cs.addEventListener('click', function(){
+      confirmModal({
+        title:'Clear the sample nights?',
+        message:'The three demo nights and their reactions will be removed so you can start fresh.',
+        confirmText:'Clear them',
+        onConfirm: clearSample
+      });
+    });
+    sd.appendChild(cs);
+    app.appendChild(sd);
+  }
+
+  var foot = el('footer');
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.6'));
+  app.appendChild(foot);
+}
+
 /* ---------- master render ---------- */
 function render(){
   var app = document.getElementById('app');
@@ -1880,7 +2276,8 @@ function render(){
   renderHeader(app);
   if (view === 'home') renderHome(app);
   else if (view === 'stats') renderStats(app);
-  else renderTrivia(app);
+  else if (view === 'trivia') renderTrivia(app);
+  else renderSettings(app);
   renderTabbar();
 }
 
