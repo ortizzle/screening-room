@@ -466,7 +466,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.1 · Freshest First';
+var APP_VERSION = 'v2.2 · True Theatrical';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1428,12 +1428,11 @@ function releaseLabel(entry){
 }
 function isLikelyInTheaters(entry){
   if(entry.type !== 'movie' || !entry.releaseDate) return false;
-  var hasProviders = entry.providers && (
-    (entry.providers.stream && entry.providers.stream.length) ||
-    (entry.providers.rent && entry.providers.rent.length) ||
-    (entry.providers.buy && entry.providers.buy.length)
-  );
-  if(hasProviders) return false;
+  // only a real at-home option disqualifies: a subscription stream or an
+  // actual rental. TMDB lists buy-only "preorder" pages for big films while
+  // they're still theaters-only — those don't mean you can watch it at home.
+  var p = entry.providers || {};
+  if((p.stream && p.stream.length) || (p.rent && p.rent.length)) return false;
   var days = Math.floor((new Date() - new Date(entry.releaseDate+'T00:00:00')) / 864e5);
   // already released (within the theatrical window) OR releasing soon enough that
   // theaters have likely posted showtimes/presale tickets
@@ -1468,8 +1467,8 @@ function wishlistBucket(entry){
     var when = new Date(entry.releaseDate+'T00:00:00');
     if(!isNaN(when.getTime()) && when > new Date()) return 1; // coming soon
   }
+  if(isLikelyInTheaters(entry)) return 0;    // released, still in theaters (preorder listings don't count)
   if(hasAnyProvider(entry)) return 2;        // on a service
-  if(isLikelyInTheaters(entry)) return 0;    // released, still in theaters
   return 3;                                  // catalog / not yet landed
 }
 var WAIT_VIEWS = [
@@ -1646,9 +1645,15 @@ function titleCard(entry){
     if(entry.streamNewAt && (Date.now()-entry.streamNewAt) < 7*864e5 && (entry.providers && entry.providers.stream || []).length){
       meta.appendChild(el('div','new-badge', 'New on ' + entry.providers.stream[0]));
     }
-    var chips = providerChips(entry, 'all', 3);
+    // an in-theaters movie shows as such — its only "provider" would be a preorder listing
+    var inTheatersNow = wishlistBucket(entry) === 0;
+    var chips = inTheatersNow ? null : providerChips(entry, 'all', 3);
     if(chips){ chips.style.marginTop='8px'; meta.appendChild(chips); }
-    else{ var none = el('div','kind'); none.style.marginTop='8px'; none.textContent=releaseLabel(entry); meta.appendChild(none); }
+    else{
+      var none = el('div','kind'); none.style.marginTop='8px';
+      none.textContent = inTheatersNow ? '🎬 In theaters now' : releaseLabel(entry);
+      meta.appendChild(none);
+    }
   }
 
   if(entry.tags && entry.tags.length){
@@ -2117,7 +2122,6 @@ function listMetaLine(entry){
   if(entry.status==='wishlist'){
     var p = entry.providers||{};
     if(p.stream && p.stream.length) return 'STREAMING ON ' + p.stream[0].toUpperCase();
-    if((p.rent&&p.rent.length) || (p.buy&&p.buy.length)) return 'AVAILABLE TO RENT';
     // a future release gets the countdown; only a released-but-unlanded title reads "in theaters"
     var future = false;
     if(entry.releaseDate){
@@ -2125,6 +2129,7 @@ function listMetaLine(entry){
       future = !isNaN(when.getTime()) && when > new Date();
     }
     if(!future && isLikelyInTheaters(entry)) return 'IN THEATERS NOW';
+    if((p.rent&&p.rent.length) || (p.buy&&p.buy.length)) return 'AVAILABLE TO RENT';
     return releaseLabel(entry).toUpperCase();
   }
   if(entry.status==='watching'){
