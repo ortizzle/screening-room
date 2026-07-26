@@ -13,7 +13,7 @@
 <link rel="icon" type="image/svg+xml" href="fmn-icon.svg">
 <meta name="description" content="Family Movie Night — the Ortiz family's Friday-night memory book: picks, reactions, quotes, memories, stats, trivia, and keepsakes.">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&family=Comic+Neue:ital,wght@0,700;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root{
   --room:#211820;
@@ -182,22 +182,30 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 }
 .pdot.off{color:#6B5770}
 
-/* quote — sticky note */
-.quotewall{margin-top:28px;cursor:pointer;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;align-items:center}
-.sticky{
-  background:linear-gradient(180deg,#FFE9B8,#FFDF9E);
-  color:#4A3520;border-radius:4px;max-width:480px;width:100%;
-  padding:18px 20px 20px;transform:rotate(-1.6deg);
-  box-shadow:0 8px 22px rgba(0,0,0,.35);position:relative;
+/* quote wall — comic speech bubble */
+.quotewall{margin-top:30px;cursor:pointer;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;align-items:center}
+.cq{
+  position:relative;background:#FFFDF6;color:#231A14;border:3px solid #17101A;
+  border-radius:22px;max-width:480px;width:100%;padding:16px 18px;
+  font-family:'Comic Neue',cursive;font-weight:700;font-size:17.5px;line-height:1.35;
+  box-shadow:0 8px 22px rgba(0,0,0,.4);transform:rotate(-1deg);
 }
-.sticky::before{
-  content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%) rotate(2deg);
-  width:84px;height:20px;background:rgba(255,255,255,.35);border:1px solid rgba(0,0,0,.06);
-  border-radius:2px;
+.cq::before{
+  content:'';position:absolute;bottom:-17px;left:40px;width:0;height:0;
+  border-style:solid;border-width:17px 15px 0 0;
+  border-color:#17101A transparent transparent transparent;
 }
-.sticky blockquote{font-family:'Caveat',cursive;font-weight:700;font-size:24px;line-height:1.25}
-.sticky .attr{font-family:'Caveat',cursive;font-size:17px;margin-top:8px;opacity:.75;text-align:right}
-.quotewall .hint{font-size:9px;letter-spacing:2px;color:#5E4C60;text-transform:uppercase;margin-top:10px;font-weight:800}
+.cq::after{
+  content:'';position:absolute;bottom:-10px;left:44px;width:0;height:0;
+  border-style:solid;border-width:12px 10px 0 0;
+  border-color:#FFFDF6 transparent transparent transparent;
+}
+.cq-wrap{max-width:480px;width:100%;display:flex;flex-direction:column}
+.quotewall .attr{
+  font-size:11px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;
+  margin:22px 0 0 34px;font-weight:900;
+}
+.quotewall .hint{font-size:9px;letter-spacing:2px;color:#5E4C60;text-transform:uppercase;margin:6px 0 0 34px;font-weight:800}
 
 /* log button */
 .log-btn{
@@ -440,12 +448,47 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
   color:#4A3520;font-style:italic;
 }
 .sp-char-line{margin-top:10px;font-family:'Caveat',cursive;font-size:21px;color:#4A3520;line-height:1.3}
-.sp-sticky{
-  margin-top:12px;background:linear-gradient(180deg,#FFE9B8,#FFDF9E);border-radius:3px;
-  padding:12px 15px 14px;box-shadow:0 5px 14px rgba(74,53,32,.22);
-  font-family:'Caveat',cursive;font-weight:700;font-size:21px;line-height:1.25;color:#4A3520;
+/* comic speech-bubble quotes on the scrapbook page */
+.sp-comic-wrap{margin-top:16px}
+.sp-comic{
+  position:relative;background:#FFFDF6;color:#231A14;border:2.5px solid #3A2A20;
+  border-radius:20px;padding:13px 16px;
+  font-family:'Comic Neue',cursive;font-weight:700;font-size:16.5px;line-height:1.35;
+  box-shadow:0 5px 14px rgba(74,53,32,.25);
 }
-.sp-sticky .who-cap{display:block;font-size:15px;opacity:.7;margin-top:6px;text-align:right}
+.sp-comic::before{
+  content:'';position:absolute;bottom:-15px;left:34px;width:0;height:0;
+  border-style:solid;border-width:15px 13px 0 0;
+  border-color:#3A2A20 transparent transparent transparent;
+}
+.sp-comic::after{
+  content:'';position:absolute;bottom:-9px;left:37.5px;width:0;height:0;
+  border-style:solid;border-width:11px 9px 0 0;
+  border-color:#FFFDF6 transparent transparent transparent;
+}
+.sp-comic-wrap.flip .sp-comic::before{left:auto;right:34px;border-width:15px 0 0 13px;border-color:#3A2A20 transparent transparent transparent}
+.sp-comic-wrap.flip .sp-comic::after{left:auto;right:37.5px;border-width:11px 0 0 9px;border-color:#FFFDF6 transparent transparent transparent}
+.sp-comic-wrap .sp-tag{margin:18px 0 0 30px}
+.sp-comic-wrap.flip .sp-tag{margin-left:auto;margin-right:30px;display:table}
+
+/* favorite scene — screenplay page */
+.sp-scene{
+  margin-top:12px;background:#FFFEF9;border-radius:2px;padding:15px 17px 13px 26px;
+  box-shadow:0 5px 14px rgba(74,53,32,.22);
+  font-family:'Courier Prime',monospace;color:#232323;font-size:13px;line-height:1.6;
+  position:relative;
+}
+.sp-scene::before{
+  content:'';position:absolute;left:8px;top:14px;bottom:14px;width:6px;
+  background-image:
+    radial-gradient(circle 3px at 3px 8px, #E4D9C2 0 3px, transparent 3.5px),
+    radial-gradient(circle 3px at 3px 50%, #E4D9C2 0 3px, transparent 3.5px),
+    radial-gradient(circle 3px at 3px calc(100% - 8px), #E4D9C2 0 3px, transparent 3.5px);
+  background-repeat:no-repeat;
+}
+.sp-scene .slug{font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12.5px}
+.sp-scene .action{margin-top:8px;white-space:pre-wrap}
+.sp-scene .cut{text-align:right;margin-top:10px;font-weight:700;font-size:12px;text-transform:uppercase}
 .sp-strip{
   margin-top:12px;border-radius:3px;padding:11px 14px;position:relative;
   box-shadow:0 5px 14px rgba(74,53,32,.18);font-size:13.5px;font-weight:700;line-height:1.5;
@@ -700,7 +743,8 @@ footer{
   .yb-cover{page-break-after:always}
   .yb-night,.sp-section{page-break-inside:avoid}
   .sp-title{font-size:26px}
-  .sp-sticky{font-size:19px}
+  .sp-comic{font-size:15px}
+  .sp-scene{font-size:12px}
 }
 </style>
 </head>
@@ -713,7 +757,10 @@ footer{
 <script>
 'use strict';
 /* =====================================================================
-   FAMILY MOVIE NIGHT — Ortiz Family · v1.1
+   FAMILY MOVIE NIGHT — Ortiz Family · v1.2
+   v1.2: quotes render as comic speech bubbles (Comic Neue, alternating
+   tails); new "favorite scene" question rendered as a screenplay page
+   (Courier Prime, slugline + CUT TO:) in scrapbooks and yearbooks.
    AI: optional Anthropic key (Settings) powers per-movie After-Credits
    packs — fun facts, trivia, discussion questions — stored as synced
    records so one phone generates and every phone gets them. The app is
@@ -1028,7 +1075,7 @@ function rxMemories(r){
 }
 function rxHasContent(r){
   return !!(r && (r.stars > 0 || (r.thought||'').length || (r.character||'').length ||
-    (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
+    (r.scene||'').length || (r.why||'').length || rxQuotes(r).length || rxMemories(r).length || r.poll));
 }
 function reactionsFor(nightId){
   var out = [];
@@ -1097,7 +1144,7 @@ function seedSample(){
   var seeds = [
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
       rx: {
-        chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:true} },
+        chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', scene:'The Cliffs of Insanity duel. Two masters fencing left-handed out of pure respect, switching hands mid-fight. Best sword fight ever put on film.', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:true} },
         kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
         sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
@@ -1107,12 +1154,12 @@ function seedSample(){
         chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', character:'Miles Morales', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
         kat:    { stars:5, why:'The art style is unlike anything else — I wanted us to see it together on the big TV.', thought:'The soundtrack carried the whole pizza dinner.', character:'Spider-Gwen', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
         sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', character:'Peni Parker', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
-        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
+        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', scene:'The leap of faith. Miles jumps off the building and the whole screen flips upside down so it looks like he is rising instead of falling.', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } },
     { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
       rx: {
         chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false, seenBefore:true} },
-        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
+        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', scene:'The cake scene. One bite, one beat of pure silence, and then the loudest explosion of the whole movie. I had to pause it to breathe.', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         sedona: { stars:4, why:'We needed a loud, funny one after a long week. Mission accomplished.', thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
         river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } }
@@ -1127,7 +1174,7 @@ function seedSample(){
       var rx = s.rx[m];
       data.records[rid] = { id:rid, type:'reaction', nightId:nid, member:m,
         stars:rx.stars, why:rx.why || '', thought:rx.thought, character:rx.character,
-        quotes:rx.quotes, memories:rx.memories, poll:rx.poll,
+        scene:rx.scene || '', quotes:rx.quotes, memories:rx.memories, poll:rx.poll,
         sample:true, updatedAt: now };
     }
   }
@@ -1444,6 +1491,12 @@ function openReaction(night, member){
     character.value = existing ? (existing.character || '') : '';
     box.appendChild(character);
 
+    box.appendChild(el('div','f-label','🎞 Favorite scene'));
+    var scene = el('textarea','f-area');
+    scene.placeholder = 'Set the scene — which moment will you replay forever?';
+    scene.value = existing ? (existing.scene || '') : '';
+    box.appendChild(scene);
+
     box.appendChild(el('div','f-label','Favorite quotes'));
     var quoteList = el('div','multi-list');
     function addQuoteInput(val){
@@ -1523,7 +1576,7 @@ function openReaction(night, member){
       data.records[id] = {
         id:id, type:'reaction', nightId:night.id, member:member.id,
         stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
-        thought:thought.value.trim(), character:character.value.trim(),
+        thought:thought.value.trim(), character:character.value.trim(), scene:scene.value.trim(),
         quotes:quotes, memories:memories, poll:poll,
         updatedAt: Date.now()
       };
@@ -1639,7 +1692,7 @@ function buildNightKeepsake(container, night){
     container.appendChild(chSec);
   }
 
-  /* quotes */
+  /* quotes — comic speech bubbles, tails alternating sides */
   var anyQuotes = false;
   var qSec = spSection('💬 Quotes we kept');
   var qi = 0;
@@ -1647,15 +1700,34 @@ function buildNightKeepsake(container, night){
     var r = reactionFor(night.id, m.id);
     rxQuotes(r).forEach(function(q){
       anyQuotes = true;
-      var st = el('div','sp-sticky');
-      st.appendChild(document.createTextNode('“' + q + '”'));
-      st.appendChild(el('span','who-cap','— ' + m.name));
-      st.style.transform = 'rotate(' + rots[qi % 4] + 'deg)';
-      qSec.appendChild(st);
+      var wrap = el('div','sp-comic-wrap' + (qi % 2 ? ' flip' : ''));
+      var bubble = el('div','sp-comic', q);
+      bubble.style.transform = 'rotate(' + (rots[qi % 4] * 0.6) + 'deg)';
+      wrap.appendChild(bubble);
+      wrap.appendChild(spTag(m));
+      qSec.appendChild(wrap);
       qi++;
     });
   });
   if (anyQuotes) container.appendChild(qSec);
+
+  /* favorite scenes — screenplay pages */
+  var sceneMembers = MEMBERS.filter(function(m){
+    var r = reactionFor(night.id, m.id);
+    return r && r.scene;
+  });
+  if (sceneMembers.length){
+    var scSec = spSection('🎞 Favorite scenes');
+    sceneMembers.forEach(function(m){
+      var r = reactionFor(night.id, m.id);
+      var pageEl = el('div','sp-scene');
+      pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'));
+      pageEl.appendChild(el('div','action', r.scene));
+      pageEl.appendChild(el('div','cut','Cut to:'));
+      scSec.appendChild(pageEl);
+    });
+    container.appendChild(scSec);
+  }
 
   /* memories */
   var anyMems = false;
@@ -2263,11 +2335,17 @@ function renderHome(app){
     qw.setAttribute('role','button');
     qw.setAttribute('tabindex','0');
     var q = quotes[quoteIndex % quotes.length];
-    var sticky = el('div','sticky');
-    sticky.appendChild(el('blockquote', null, '“' + q.quote + '”'));
-    sticky.appendChild(el('div','attr', '— ' + q.member.name + ', ' + q.movie));
-    qw.appendChild(sticky);
-    qw.appendChild(el('div','hint','From the quote wall · tap for another'));
+    var cqw = el('div','cq-wrap');
+    var bubble = el('div','cq', q.quote);
+    cqw.appendChild(bubble);
+    var attr = el('div','attr');
+    var an = el('span', null, q.member.name);
+    an.style.color = q.member.color;
+    attr.appendChild(an);
+    attr.appendChild(document.createTextNode(' · ' + q.movie));
+    cqw.appendChild(attr);
+    cqw.appendChild(el('div','hint','From the quote wall · tap for another'));
+    qw.appendChild(cqw);
     function nextQuote(){ quoteIndex++; render(); }
     qw.addEventListener('click', nextQuote);
     qw.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); nextQuote(); } });
@@ -2342,7 +2420,7 @@ function renderHome(app){
       who.style.color = m.color;
       row.appendChild(who);
       if (r && r.stars) row.appendChild(starsNode(r.stars));
-      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || r.character || '') : '';
+      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || r.scene || r.character || '') : '';
       if (snippetText){
         row.appendChild(el('span','snippet', snippetText));
       } else if (!r || !r.stars){
@@ -2382,7 +2460,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.1'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.2'));
   app.appendChild(footer);
 }
 
@@ -2792,7 +2870,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.1'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.2'));
   app.appendChild(foot);
 }
 
