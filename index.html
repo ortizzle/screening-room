@@ -466,7 +466,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.0 · Watched from Waiting';
+var APP_VERSION = 'v2.1 · Freshest First';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1313,8 +1313,8 @@ function rerender(){
 }
 
 function renderContinueWatching(){
-  var watchingTv = lib.filter(function(e){ return e.status==='watching' && e.type==='tv'; });
-  var watchingMovies = lib.filter(function(e){ return e.status==='watching' && e.type==='movie'; });
+  var watchingTv = lib.filter(function(e){ return e.status==='watching' && e.type==='tv'; }).sort(byLastWatched);
+  var watchingMovies = lib.filter(function(e){ return e.status==='watching' && e.type==='movie'; }).sort(byLastWatched);
   if(!watchingTv.length && !watchingMovies.length) return;
 
   app.appendChild(el('div','section-label','Continue Watching'));
@@ -1548,6 +1548,8 @@ function renderPane(){
   if(tagBar) app.appendChild(tagBar);
   if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
 
+  if(state.tab === 'watching'){ items.sort(byLastWatched); }
+
   if(state.tab === 'wishlist'){
     if(state.waitView !== 'all'){
       var want = {theaters:0, soon:1, streaming:2}[state.waitView];
@@ -1685,10 +1687,14 @@ function removeEntry(entry){
 }
 function moveStatus(entry, status){
   entry.status = status;
-  if(status==='watching'){ entry.finishedAt = null; }
+  if(status==='watching'){ entry.finishedAt = null; entry.lastWatchedAt = Date.now(); }
   saveLib();
   state.tab = status;
   rerender();
+}
+/* most recent activity floats a show to the top of Watching */
+function byLastWatched(a, b){
+  return (b.lastWatchedAt||b.addedAt||0) - (a.lastWatchedAt||a.addedAt||0);
 }
 
 /* ---------- shareable ticket image ---------- */
@@ -2555,6 +2561,7 @@ function seasonBlock(entry, season){
         var k = 's'+season.n+'e'+i;
         if(target) entry.watched[k] = true; else delete entry.watched[k];
       }
+      if(target) entry.lastWatchedAt = Date.now();
       saveLib();
       maybeFinishPrompt(entry);
       rerender();
@@ -2599,6 +2606,7 @@ function seasonBlock(entry, season){
 
       function setSeen(nowSeen){
         if(nowSeen) entry.watched[key] = true; else delete entry.watched[key];
+        if(nowSeen) entry.lastWatchedAt = Date.now();
         row2.classList.toggle('seen', nowSeen);
         cb.textContent = nowSeen ? '✓' : '';
         saveLib();
@@ -2748,6 +2756,7 @@ function renderRateBox(container, entry){
         recommend: entry.recommend, finishedAt: entry.finishedAt||null
       });
       entry.status='watching'; entry.finishedAt=null; delete entry._rating;
+      entry.lastWatchedAt = Date.now();
       if(entry.type==='tv') entry.watched = {}; // fresh episode progress for the rewatch
       saveLib(); state.tab='watching';
       notice('Back in Watching — screening #' + (entry.history.length+1) + '.');
