@@ -486,9 +486,9 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
     radial-gradient(circle 3px at 3px calc(100% - 8px), #E4D9C2 0 3px, transparent 3.5px);
   background-repeat:no-repeat;
 }
-.sp-scene .slug{font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12.5px}
+.sp-scene .slug{font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-size:12.5px;margin-top:10px}
 .sp-scene .action{margin-top:8px;white-space:pre-wrap}
-.sp-scene .cut{text-align:right;margin-top:10px;font-weight:700;font-size:12px;text-transform:uppercase}
+.sp-scene .cut{text-align:right;font-weight:700;font-size:12px;text-transform:uppercase}
 .sp-strip{
   margin-top:12px;border-radius:3px;padding:11px 14px;position:relative;
   box-shadow:0 5px 14px rgba(74,53,32,.18);font-size:13.5px;font-weight:700;line-height:1.5;
@@ -1721,9 +1721,9 @@ function buildNightKeepsake(container, night){
     sceneMembers.forEach(function(m){
       var r = reactionFor(night.id, m.id);
       var pageEl = el('div','sp-scene');
+      pageEl.appendChild(el('div','cut','Cut to:'));
       pageEl.appendChild(el('div','slug', m.name + '’s favorite scene'));
       pageEl.appendChild(el('div','action', r.scene));
-      pageEl.appendChild(el('div','cut','Cut to:'));
       scSec.appendChild(pageEl);
     });
     container.appendChild(scSec);
