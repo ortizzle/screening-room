@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Movie Night">
+<link rel="manifest" href="family-movie-night.webmanifest">
+<link rel="icon" type="image/svg+xml" href="fmn-icon.svg">
 <meta name="description" content="Family Movie Night — the Ortiz family's Friday-night memory book: picks, reactions, quotes, memories, stats, trivia, and keepsakes.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&display=swap');
@@ -570,9 +572,9 @@ header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-w
 input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:none}
 .multi-list{display:flex;flex-direction:column;gap:8px}
 
-.poll-chips{display:flex;gap:8px}
+.poll-chips{display:flex;gap:8px;flex-wrap:wrap}
 .poll-chip{
-  flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);
+  flex:1 1 44%;min-height:52px;border-radius:14px;border:2px solid var(--line);
   background:var(--card-2);font-weight:800;font-size:12.5px;color:var(--dim);line-height:1.3;
 }
 .poll-chip.on{background:rgba(255,180,84,.14);border-color:var(--amber);color:var(--amber)}
@@ -631,14 +633,19 @@ footer{
   text-transform:uppercase;line-height:2;font-weight:800;
 }
 
-/* ============ PRINT (keepsake PDFs) ============ */
+/* ============ PRINT (keepsake PDFs — US Letter book pages) ============ */
+@page{ size: letter portrait; margin: 0.6in; }
 @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body{background:#F8EEDC;padding:0}
+  html,body{background:#F8EEDC;padding:0;margin:0}
   .lights,.tabbar,.toast,#app{display:none !important}
   .scrap-overlay{position:static;inset:auto;overflow:visible;padding:0;background:#F8EEDC}
   .scrap-close,.sp-print,.sp-print-hint,.no-print{display:none !important}
-  .scrap-page{padding:20px 8px 0;max-width:none}
+  .scrap-page{padding:0;max-width:none;font-size:13px}
+  .yb-cover{page-break-after:always}
+  .yb-night,.sp-section{page-break-inside:avoid}
+  .sp-title{font-size:26px}
+  .sp-sticky{font-size:19px}
 }
 </style>
 </head>
@@ -651,15 +658,17 @@ footer{
 <script>
 'use strict';
 /* =====================================================================
-   FAMILY MOVIE NIGHT — Ortiz Family · Prototype v0.6
+   FAMILY MOVIE NIGHT — Ortiz Family · v1.0
    Tabs: Nights / Stats / Trivia / Settings.
    Reactions: stars, thought, favorite character, quotes[], memories[],
-   family poll (laughed/cried/watch again), and "why I picked it" for
-   the night's selector.
+   family poll (laughed / cried / watch again / seen it before), and
+   "why I picked it" for the night's selector.
    Keepsakes: per-night scrapbook (grouped by question) and a Year in
-   Review — both save to PDF via the print dialog. Settings has
-   export/import JSON backups.
-   Prototype: localStorage only. Gist family sync lands in v1.0.
+   Review — both print to US Letter PDFs. Settings has export/import
+   JSON backups.
+   Sync: shared family Gist, safe merge (per-record newest-wins) with
+   tombstoned deletes — one memory book across every phone. Offline
+   first: localStorage always works; sync retries when back online.
    ===================================================================== */
 
 /* ---------- Arizona time helpers (canonical) ---------- */
@@ -774,7 +783,163 @@ if (!data.records) data.records = {};
 function saveData(){
   data.updatedAt = Date.now();
   if (!Store.set('data', data)) toast('Storage full — could not save');
+  scheduleSync();
 }
+
+/* ---------- family Gist sync (safe merge + tombstones — canonical) ----------
+   Rules that prevent the data-loss bugs other family apps hit:
+   - every record has id + updatedAt; per-record newest-wins on merge
+   - deletes are tombstones ({deleted:true}), purged after 60 days
+   - on save: fetch remote FIRST, merge, then write — never blind-overwrite */
+var Sync = {
+  filename: 'family-movie-night-data.json',
+  gistId: function(){ return Store.get('gist_id') || ''; },
+  token: function(){ return Store.get('gist_token') || ''; },
+  configured: function(){ return !!(this.gistId() && this.token()); },
+  headers: function(){
+    return {
+      'Authorization': 'Bearer ' + this.token(),
+      'Accept': 'application/vnd.github+json'
+    };
+  },
+  pullRemote: function(){
+    var self = this;
+    return fetch('https://api.github.com/gists/' + self.gistId(), { headers: self.headers() })
+      .then(function(res){
+        if (!res.ok) throw new Error('Gist fetch failed: ' + res.status);
+        return res.json();
+      })
+      .then(function(gist){
+        var file = gist.files[self.filename];
+        if (!file) return { records:{} };
+        if (file.truncated){
+          return fetch(file.raw_url).then(function(r){ return r.text(); })
+            .then(function(t){ return JSON.parse(t || '{"records":{}}'); });
+        }
+        return JSON.parse(file.content || '{"records":{}}');
+      });
+  },
+  merge: function(local, remote){
+    var out = { records: {} };
+    var id;
+    for (id in (remote.records || {})) out.records[id] = remote.records[id];
+    for (id in (local.records || {})){
+      var rec = local.records[id];
+      var r = out.records[id];
+      if (!r || (rec.updatedAt || 0) > (r.updatedAt || 0)) out.records[id] = rec;
+    }
+    var cutoff = Date.now() - 60 * 86400000;
+    for (id in out.records){
+      var t = out.records[id];
+      if (t && t.deleted && (t.updatedAt || 0) < cutoff) delete out.records[id];
+    }
+    return out;
+  },
+  save: function(localData){
+    var self = this;
+    var mergedHolder = localData;
+    return self.pullRemote()
+      .catch(function(){ return null; }) // offline or first save — proceed with local
+      .then(function(remote){
+        var merged = remote ? self.merge(localData, remote) : localData;
+        mergedHolder = merged;
+        // demo nights stay local — never seed the family gist with sample data
+        var upload = { records:{} };
+        for (var id in merged.records){
+          if (!merged.records[id].sample) upload.records[id] = merged.records[id];
+        }
+        return fetch('https://api.github.com/gists/' + self.gistId(), {
+          method: 'PATCH',
+          headers: Object.assign({ 'Content-Type':'application/json' }, self.headers()),
+          body: JSON.stringify({ files: (function(){
+            var f = {};
+            f[self.filename] = { content: JSON.stringify(upload, null, 2) };
+            return f;
+          })() })
+        });
+      })
+      .then(function(res){
+        if (!res.ok) throw new Error('Gist save failed: ' + res.status);
+        Store.set('data', mergedHolder);
+        Store.set('last_sync', Date.now());
+        return mergedHolder;
+      });
+  },
+  load: function(){
+    var self = this;
+    var local = Store.get('data', { records:{} });
+    return self.pullRemote().then(function(remote){
+      var merged = self.merge(local, remote);
+      Store.set('data', merged);
+      Store.set('last_sync', Date.now());
+      return merged;
+    });
+  },
+  createGist: function(){
+    var self = this;
+    return fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type':'application/json' }, self.headers()),
+      body: JSON.stringify({
+        description: 'family-movie-night-data',
+        public: false,
+        files: (function(){
+          var f = {};
+          f[self.filename] = { content: '{"records":{}}' };
+          return f;
+        })()
+      })
+    }).then(function(res){
+      if (!res.ok) throw new Error('Gist create failed: ' + res.status);
+      return res.json();
+    }).then(function(gist){
+      Store.set('gist_id', gist.id);
+      return gist.id;
+    });
+  }
+};
+var syncTimer = null;
+var syncBusy = false;
+function overlaysOpen(){
+  return !!document.querySelector('.modal-overlay') || !!document.querySelector('.scrap-overlay');
+}
+function adoptMerged(merged){
+  var changed = JSON.stringify(merged) !== JSON.stringify(data);
+  data = merged;
+  if (changed && !overlaysOpen()) render();
+  return changed;
+}
+function scheduleSync(){
+  if (!Sync.configured()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(runSync, 1500);
+}
+function runSync(){
+  if (!Sync.configured() || syncBusy) return;
+  syncBusy = true;
+  Sync.save(data).then(function(merged){
+    syncBusy = false;
+    adoptMerged(merged);
+  }).catch(function(){
+    syncBusy = false;
+    toast('Saved on this phone — family sync will retry');
+  });
+}
+function pullSync(quiet){
+  if (!Sync.configured() || syncBusy) return;
+  syncBusy = true;
+  Sync.load().then(function(merged){
+    syncBusy = false;
+    var changed = adoptMerged(merged);
+    if (!quiet) toast(changed ? 'Synced — new family entries in! 🍿' : 'Synced — all caught up ✓');
+  }).catch(function(){
+    syncBusy = false;
+    if (!quiet) toast('Couldn’t reach the family gist — check token & connection');
+  });
+}
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'visible' && !overlaysOpen()) pullSync(true);
+});
 function liveRecords(type){
   var out = [];
   for (var id in data.records){
@@ -852,7 +1017,7 @@ function nightNearDate(dateStr){
   return null;
 }
 function pollTally(nightId){
-  var t = { laughed:[], cried:[], rewatch:[], answered:0 };
+  var t = { laughed:[], cried:[], rewatch:[], seenBefore:[], answered:0 };
   MEMBERS.forEach(function(m){
     var r = reactionFor(nightId, m.id);
     if (r && r.poll){
@@ -860,6 +1025,7 @@ function pollTally(nightId){
       if (r.poll.laughed) t.laughed.push(m);
       if (r.poll.cried) t.cried.push(m);
       if (r.poll.rewatch) t.rewatch.push(m);
+      if (r.poll.seenBefore) t.seenBefore.push(m);
     }
   });
   return t;
@@ -872,24 +1038,24 @@ function seedSample(){
   var seeds = [
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
       rx: {
-        chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true} },
-        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true} },
-        sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'], poll:{laughed:true, cried:false, rewatch:true} },
-        river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'], poll:{laughed:true, cried:false, rewatch:true} }
+        chris:  { stars:5, why:'You can’t officially be an Ortiz kid until you’ve seen it. It was time.', thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', character:'Inigo Montoya', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:true} },
+        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', character:'Westley', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
+        sedona: { stars:4, thought:'The sword fight was actually so good?', character:'Inigo Montoya', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
+        river:  { stars:5, thought:'THE ROUS ARE REAL.', character:'Fezzik', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } },
     { title:'Spider-Man: Into the Spider-Verse', year:2018, date:'2026-07-17', pickedBy:'kat', grad:'linear-gradient(160deg,#4A2E5E,#1E0E2A)',
       rx: {
-        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', character:'Miles Morales', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'], poll:{laughed:true, cried:true, rewatch:true} },
-        kat:    { stars:5, why:'The art style is unlike anything else — I wanted us to see it together on the big TV.', thought:'The soundtrack carried the whole pizza dinner.', character:'Spider-Gwen', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'], poll:{laughed:true, cried:true, rewatch:true} },
-        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', character:'Peni Parker', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'], poll:{laughed:true, cried:false, rewatch:true} },
-        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'], poll:{laughed:true, cried:false, rewatch:true} }
+        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', character:'Miles Morales', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
+        kat:    { stars:5, why:'The art style is unlike anything else — I wanted us to see it together on the big TV.', thought:'The soundtrack carried the whole pizza dinner.', character:'Spider-Gwen', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'], poll:{laughed:true, cried:true, rewatch:true, seenBefore:true} },
+        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', character:'Peni Parker', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
+        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', character:'Spider-Ham', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } },
     { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
       rx: {
-        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false} },
-        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true} },
-        sedona: { stars:4, why:'We needed a loud, funny one after a long week. Mission accomplished.', thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'], poll:{laughed:true, cried:false, rewatch:true} },
-        river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'], poll:{laughed:true, cried:false, rewatch:true} }
+        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', character:'Dr. Smolder Bravestone', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'], poll:{laughed:true, cried:false, rewatch:false, seenBefore:true} },
+        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', character:'Professor Shelly Oberon', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
+        sedona: { stars:4, why:'We needed a loud, funny one after a long week. Mission accomplished.', thought:'Good pick, me. The video-game lives idea is clever.', character:'Ruby Roundhouse', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} },
+        river:  { stars:5, thought:'CAKE. BOOM.', character:'Franklin "Mouse" Finbar', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'], poll:{laughed:true, cried:false, rewatch:true, seenBefore:false} }
       } }
   ];
   for (var i=0;i<seeds.length;i++){
@@ -1161,8 +1327,9 @@ function openReaction(night, member){
   var stars = existing ? existing.stars : 0;
   var isPicker = night.pickedBy === member.id;
   var poll = existing && existing.poll ? {
-    laughed: !!existing.poll.laughed, cried: !!existing.poll.cried, rewatch: !!existing.poll.rewatch
-  } : { laughed:false, cried:false, rewatch:false };
+    laughed: !!existing.poll.laughed, cried: !!existing.poll.cried,
+    rewatch: !!existing.poll.rewatch, seenBefore: !!existing.poll.seenBefore
+  } : { laughed:false, cried:false, rewatch:false, seenBefore:false };
 
   openModal(function(box, close){
     var h = el('h3', null, member.name + '’s Reaction');
@@ -1263,9 +1430,10 @@ function openReaction(night, member){
     box.appendChild(el('div','f-label','🗳 The family poll'));
     var pollRow = el('div','poll-chips');
     [
-      { key:'laughed', label:'😂 I laughed' },
-      { key:'cried',   label:'😢 I cried' },
-      { key:'rewatch', label:'🔁 Again!' }
+      { key:'laughed',    label:'😂 I laughed' },
+      { key:'cried',      label:'😢 I cried' },
+      { key:'rewatch',    label:'🔁 Again!' },
+      { key:'seenBefore', label:'👀 Seen it before' }
     ].forEach(function(pq){
       var c = el('button','poll-chip' + (poll[pq.key] ? ' on' : ''), pq.label);
       c.type = 'button';
@@ -1456,7 +1624,8 @@ function buildNightKeepsake(container, night){
     [
       { label:'😂 Did we laugh?', list:tally.laughed },
       { label:'😢 Did we cry?', list:tally.cried },
-      { label:'🔁 Watch it again?', list:tally.rewatch }
+      { label:'🔁 Watch it again?', list:tally.rewatch },
+      { label:'👀 Seen it before?', list:tally.seenBefore }
     ].forEach(function(pq){
       var row = el('div','sp-poll-row');
       row.appendChild(el('span','pq', pq.label));
@@ -1571,7 +1740,7 @@ function openYearbook(year){
   cover.appendChild(el('div','yb-sub','a year on the couch, together'));
 
   var avgs = [];
-  var quoteCount = 0, memCount = 0;
+  var quoteCount = 0, memCount = 0, firstWatches = 0;
   var best = null;
   yearNights.forEach(function(n){
     var a = familyAvg(n.id);
@@ -1583,6 +1752,7 @@ function openYearbook(year){
       var r = reactionFor(n.id, m.id);
       quoteCount += rxQuotes(r).length;
       memCount += rxMemories(r).length;
+      if (r && r.poll && !r.poll.seenBefore) firstWatches++;
     });
   });
   var stats = el('div','yb-stats');
@@ -1590,7 +1760,8 @@ function openYearbook(year){
     { n:String(yearNights.length), l:'movie nights' },
     { n:avgs.length ? (avgs.reduce(function(a,b){return a+b;},0)/avgs.length).toFixed(1) + '★' : '—', l:'avg family score' },
     { n:String(quoteCount), l:'quotes kept' },
-    { n:String(memCount), l:'memories saved' }
+    { n:String(memCount), l:'memories saved' },
+    { n:String(firstWatches), l:'first watches' }
   ].forEach(function(s){
     var t = el('div','yb-stat');
     t.appendChild(el('div','n', s.n));
@@ -1950,7 +2121,7 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.0'));
   app.appendChild(footer);
 }
 
@@ -2197,6 +2368,67 @@ function renderSettings(app){
   }
   app.appendChild(ks);
 
+  /* family sync */
+  var sy = el('div','set-card');
+  sy.appendChild(el('div','set-title','🔄 Family sync (shared Gist)'));
+  var configured = Sync.configured();
+  if (configured){
+    var last = Store.get('last_sync');
+    sy.appendChild(el('div','set-note','Sync is ON — every phone with this token & gist shares one memory book. Last synced: '
+      + (last ? new Date(last).toLocaleString('en-US', { timeZone: AZ.tz, month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'not yet') + '.'));
+    var now = el('button','set-btn','🔄 Sync now');
+    now.addEventListener('click', function(){ pullSync(false); });
+    sy.appendChild(now);
+  } else {
+    sy.appendChild(el('div','set-note','One-time setup: paste the family GitHub token, then create (or paste) the family gist. Do the same on each phone — after that, everything syncs automatically.'));
+  }
+  var rowt = el('div','set-row');
+  var tInput2 = el('input','f-input');
+  tInput2.type = 'password';
+  tInput2.autocomplete = 'off';
+  tInput2.placeholder = Sync.token() ? 'Token saved — paste to replace' : 'Paste GitHub token (gist scope)';
+  rowt.appendChild(tInput2);
+  var tSave = el('button','set-save','Save');
+  tSave.addEventListener('click', function(){
+    var v = tInput2.value.trim();
+    if (!v) return;
+    Store.set('gist_token', v);
+    render();
+    toast('Token saved 🔐');
+  });
+  rowt.appendChild(tSave);
+  sy.appendChild(rowt);
+  var rowg = el('div','set-row');
+  var gInput = el('input','f-input');
+  gInput.type = 'text';
+  gInput.autocomplete = 'off';
+  gInput.placeholder = Sync.gistId() ? 'Gist saved: ' + Sync.gistId().slice(0,8) + '… — paste to replace' : 'Paste family gist ID';
+  rowg.appendChild(gInput);
+  var gSave = el('button','set-save','Save');
+  gSave.addEventListener('click', function(){
+    var v = gInput.value.trim();
+    if (!v) return;
+    Store.set('gist_id', v);
+    render();
+    toast('Gist linked 🔗');
+    pullSync(false);
+  });
+  rowg.appendChild(gSave);
+  sy.appendChild(rowg);
+  if (Sync.token() && !Sync.gistId()){
+    var cg = el('button','set-btn','✨ Create the family gist (first phone only)');
+    cg.addEventListener('click', function(){
+      Sync.createGist().then(function(id){
+        render();
+        toast('Family gist created! Share its ID with the other phones');
+      }).catch(function(){
+        toast('Couldn’t create the gist — check the token');
+      });
+    });
+    sy.appendChild(cg);
+  }
+  app.appendChild(sy);
+
   /* data safety */
   var ds = el('div','set-card');
   ds.appendChild(el('div','set-title','💾 Backups (safe keeping)'));
@@ -2216,7 +2448,7 @@ function renderSettings(app){
   var im = el('button','set-btn','📥 Import backup file');
   im.addEventListener('click', function(){ fileInput.click(); });
   ds.appendChild(im);
-  ds.appendChild(el('div','set-note','Family sync across all four phones arrives in v1.0 — backups are the seatbelt either way.'));
+  ds.appendChild(el('div','set-note','Even with family sync on, a backup file in Drive/Files is the seatbelt.'));
   app.appendChild(ds);
 
   /* tmdb key */
@@ -2265,7 +2497,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.6'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v1.0'));
   app.appendChild(foot);
 }
 
@@ -2283,6 +2515,7 @@ function render(){
 
 seedSample();
 render();
+pullSync(true); // pick up the family's latest entries on launch (no-op until sync is set up)
 </script>
 </body>
 </html>

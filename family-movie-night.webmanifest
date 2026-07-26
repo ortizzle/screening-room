@@ -1,0 +1,12 @@
+{
+  "name": "Family Movie Night",
+  "short_name": "Movie Night",
+  "description": "The Ortiz family's Friday-night memory book",
+  "start_url": "./family-movie-night.html",
+  "display": "standalone",
+  "background_color": "#211820",
+  "theme_color": "#211820",
+  "icons": [
+    { "src": "fmn-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
