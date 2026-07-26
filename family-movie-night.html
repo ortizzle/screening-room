@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Movie Night — Ortiz Family (Cozy)</title>
+<title>Family Movie Night — Ortiz Family</title>
 <meta name="theme-color" content="#211820">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Movie Night">
-<meta name="description" content="The Ortiz family movie night memory book — picks, reactions, quotes, and memories.">
+<meta name="description" content="Family Movie Night — the Ortiz family's Friday-night memory book: picks, reactions, quotes, and memories.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500..800&family=Nunito:ital,wght@0,400..900;1,400..700&family=Caveat:wght@500;700&display=swap');
 
 :root{
-  --room:#211820;          /* lights-off living room */
+  --room:#211820;
   --room-2:#2B202B;
   --card:#2E2430;
   --card-2:#3A2D3C;
@@ -64,7 +64,7 @@ header{padding-top:14px;text-align:center}
 header h1{
   font-family:'Baloo 2',sans-serif;
   font-weight:800;
-  font-size:clamp(32px,8.5vw,48px);
+  font-size:clamp(26px,7vw,42px);
   color:var(--cream);
   text-shadow:0 0 24px rgba(255,180,84,.35);
   letter-spacing:.5px;
@@ -74,35 +74,87 @@ header .now{
   font-size:11.5px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:4px;
   font-weight:800;
 }
+header .doodles{font-size:13px;opacity:.55;margin-top:8px;letter-spacing:14px;-webkit-user-select:none;user-select:none}
 
-/* tonight's pick card */
-.tonight{
-  margin-top:24px;background:var(--card);border:2px solid var(--line);border-radius:22px;
-  padding:20px 18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3);
+/* projector screen — UP NEXT */
+.screenbox{margin-top:24px;text-align:center}
+.screen{
+  position:relative;
+  background:linear-gradient(180deg,#FFFDF7 0%,#F3EADA 78%,#E9DEC8 100%);
+  border:5px solid #17101A;border-radius:10px;
+  box-shadow:0 0 0 2px var(--line), 0 16px 36px rgba(0,0,0,.45),
+    inset 0 -14px 30px rgba(58,46,40,.08), inset 0 6px 24px rgba(255,255,255,.6);
+  padding:22px 16px 24px;color:#4A3A32;
 }
-.tonight .label{font-size:11px;letter-spacing:3.5px;color:var(--amber);text-transform:uppercase;font-weight:900}
-.tonight .pickname{
+.screen .label{
+  font-size:11px;letter-spacing:4px;color:var(--coral);text-transform:uppercase;font-weight:900;
+}
+.screen .pickname{
   font-family:'Baloo 2',sans-serif;font-weight:800;
   font-size:clamp(24px,6.5vw,34px);margin-top:6px;line-height:1.15;
 }
-.tonight .showdate{font-size:13px;color:var(--dim);margin-top:6px;font-weight:700}
-.rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
+.screen .showdate{font-size:13px;color:#8A7563;margin-top:6px;font-weight:800}
+.screen .rotation{display:flex;justify-content:center;align-items:center;gap:5px;margin-top:16px;flex-wrap:wrap}
 .rot-chip{
-  display:flex;align-items:center;gap:6px;background:var(--card-2);border:2px solid var(--line);
-  border-radius:99px;padding:6px 13px 6px 8px;font-size:13px;font-weight:800;color:var(--dim);
+  display:flex;align-items:center;gap:6px;background:#FFF9EE;border:2px solid #E2D4BC;
+  border-radius:99px;padding:6px 13px 6px 8px;font-size:13px;font-weight:800;color:#8A7563;
   min-height:38px;
 }
 .rot-chip .dot{
   width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:900;color:#2A1B14;
 }
-.rot-chip.current{color:var(--cream);box-shadow:0 0 14px rgba(255,180,84,.25)}
-.rot-arrow{color:var(--line);font-size:13px;font-weight:900}
+.rot-chip.current{color:#fff;border-color:transparent}
+.rot-chip.current .dot{background:rgba(255,255,255,.35) !important;color:#fff}
+.rot-arrow{color:#CBB99C;font-size:13px;font-weight:900}
+.screen-stand{
+  width:64px;height:13px;margin:0 auto;
+  background:#17101A;border-radius:0 0 8px 8px;
+  box-shadow:0 4px 10px rgba(0,0,0,.4);
+}
 
-/* quote — sticky note from the fridge */
+/* friday lineup (calendar) */
+.lineup{
+  margin-top:26px;background:var(--card);border:2px solid var(--line);border-radius:22px;
+  padding:16px 16px 8px;box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+.lineup .lu-head{
+  font-size:11px;letter-spacing:3.5px;color:var(--amber);text-transform:uppercase;font-weight:900;
+  margin:6px 0 4px;
+}
+.lineup .lu-head.second{margin-top:16px}
+.lu-row{
+  display:flex;align-items:center;gap:10px;min-height:46px;
+  border-bottom:2px dashed #453648;padding:6px 2px;
+}
+.lu-row:last-child,.lu-row.last{border-bottom:none}
+.lu-date{width:72px;flex-shrink:0}
+.lu-date .d1{font-weight:900;font-size:13px}
+.lu-date .d2{font-size:10px;color:var(--dim);font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+.lu-pick{
+  display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:900;
+}
+.lu-pick .dot{
+  width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;color:#2A1B14;flex-shrink:0;
+}
+.lu-title{
+  flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--cream);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.lu-title.skip{color:#6B5770;font-style:italic;font-weight:600}
+.lu-fill{flex:1}
+.pdots{display:flex;gap:4px;flex-shrink:0}
+.pdot{
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;color:#2A1B14;border:2px solid var(--line);background:transparent;
+}
+.pdot.off{color:#6B5770}
+
+/* quote — sticky note */
 .quotewall{margin-top:28px;cursor:pointer;-webkit-user-select:none;user-select:none;display:flex;flex-direction:column;align-items:center}
 .sticky{
-  background:linear-gradient(180deg,#FFE9B8,#FFDf9E);
+  background:linear-gradient(180deg,#FFE9B8,#FFDF9E);
   color:#4A3520;border-radius:4px;max-width:480px;width:100%;
   padding:18px 20px 20px;transform:rotate(-1.6deg);
   box-shadow:0 8px 22px rgba(0,0,0,.35);
@@ -113,9 +165,7 @@ header .now{
   width:84px;height:20px;background:rgba(255,255,255,.35);border:1px solid rgba(0,0,0,.06);
   border-radius:2px;
 }
-.sticky blockquote{
-  font-family:'Caveat',cursive;font-weight:700;font-size:24px;line-height:1.25;
-}
+.sticky blockquote{font-family:'Caveat',cursive;font-weight:700;font-size:24px;line-height:1.25}
 .sticky .attr{font-family:'Caveat',cursive;font-size:17px;margin-top:8px;opacity:.75;text-align:right}
 .quotewall .hint{font-size:9px;letter-spacing:2px;color:#5E4C60;text-transform:uppercase;margin-top:10px;font-weight:800}
 
@@ -128,18 +178,38 @@ header .now{
 }
 .log-btn:active{transform:translateY(1px)}
 
+/* filmstrip divider */
+.film-divider{
+  height:22px;margin:32px auto 0;max-width:300px;border-radius:5px;background-color:#17101A;
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 5px, rgba(255,239,217,.55) 5px 11px, transparent 11px 16px),
+    repeating-linear-gradient(90deg, transparent 0 5px, rgba(255,239,217,.55) 5px 11px, transparent 11px 16px);
+  background-size:16px 4px,16px 4px;
+  background-position:2px 4px, 2px 14px;
+  background-repeat:repeat-x,repeat-x;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+  transform:rotate(-.8deg);
+}
+
 .section-label{
   font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;letter-spacing:1px;
-  color:var(--cream);margin:34px 0 2px;text-align:center;
+  color:var(--cream);margin:14px 0 2px;text-align:center;
 }
 .section-sub{font-size:11px;color:var(--dim);text-align:center;margin-bottom:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
 
-/* memory-book night cards */
+/* memory-book night cards with tape corners */
 .night{
-  margin-top:16px;position:relative;background:var(--card);
-  border:2px solid var(--line);border-radius:20px;padding:16px 14px 12px;
+  margin-top:22px;position:relative;background:var(--card);
+  border:2px solid var(--line);border-radius:20px;padding:18px 14px 12px;
   box-shadow:0 8px 24px rgba(0,0,0,.25);
 }
+.night::before,.night::after{
+  content:'';position:absolute;width:66px;height:20px;border-radius:2px;
+  background:rgba(255,239,217,.14);border:1px solid rgba(255,239,217,.10);
+  pointer-events:none;
+}
+.night::before{top:-9px;left:16px;transform:rotate(-5deg)}
+.night::after{bottom:-9px;right:16px;transform:rotate(4deg)}
 .night .head{display:flex;gap:14px}
 .night .poster{
   width:64px;height:92px;border-radius:3px;flex-shrink:0;
@@ -153,14 +223,26 @@ header .now{
 .night .head-txt{flex:1;min-width:0;padding-right:26px}
 .night h3{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;line-height:1.15;color:var(--cream)}
 .night .meta{font-size:12px;color:var(--dim);margin-top:3px;font-weight:800;letter-spacing:.5px}
-.night .pickpill{
-  display:inline-block;font-size:11px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;
-  border-radius:99px;padding:4px 11px;margin-top:8px;color:#2A1B14;
+.night .avgbadge{font-size:12px;font-weight:900;color:var(--star);margin-left:8px}
+
+/* ticket-stub pick tag */
+.ticket{
+  display:inline-flex;align-items:stretch;margin-top:9px;transform:rotate(-1.4deg);
+  border-radius:6px;overflow:hidden;font-size:10px;font-weight:900;letter-spacing:1px;
+  text-transform:uppercase;color:#3A2410;box-shadow:0 3px 8px rgba(0,0,0,.3);
 }
-.night .avgbadge{font-size:12px;font-weight:900;color:var(--star);margin-top:8px;margin-left:8px;display:inline-block}
+.ticket .admit{
+  padding:5px 8px;display:flex;align-items:center;
+  border-right:2px dashed rgba(58,36,16,.4);
+}
+.ticket .tname{padding:5px 10px;display:flex;align-items:center}
+.sampletag{
+  font-size:9px;letter-spacing:2px;color:#6B5770;text-transform:uppercase;font-weight:900;
+  border:2px dashed var(--line);border-radius:8px;padding:2px 7px;margin-left:8px;vertical-align:2px;
+}
 .night .del{
   background:none;border:none;color:#6B5770;font-size:16px;padding:8px 10px;
-  position:absolute;top:4px;right:4px;min-width:36px;min-height:36px;
+  position:absolute;top:4px;right:4px;min-width:36px;min-height:36px;z-index:2;
 }
 .night .del:active{color:var(--coral)}
 .rx-rows{margin-top:12px;display:flex;flex-direction:column;gap:7px}
@@ -179,10 +261,6 @@ header .now{
 }
 .rx-row .snippet.empty{color:#6B5770}
 .rx-row .chev{color:#6B5770;font-size:15px;font-weight:900}
-.sampletag{
-  font-size:9px;letter-spacing:2px;color:#6B5770;text-transform:uppercase;font-weight:900;
-  border:2px dashed var(--line);border-radius:8px;padding:2px 7px;margin-left:8px;vertical-align:2px;
-}
 
 .empty-state{
   margin-top:20px;text-align:center;color:var(--dim);font-size:15px;line-height:1.7;font-weight:700;
@@ -223,9 +301,10 @@ header .now{
   padding:12px 14px;color:var(--cream);font:inherit;font-size:15px;font-weight:600;
 }
 .f-input:focus,.f-area:focus{border-color:var(--amber);outline:none}
-.f-area{min-height:74px;resize:vertical;line-height:1.5}
+.f-area{min-height:64px;resize:vertical;line-height:1.5}
 .f-input::placeholder,.f-area::placeholder{color:#6B5770}
 input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:none}
+.multi-list{display:flex;flex-direction:column;gap:8px}
 
 /* star picker */
 .starpick{display:flex;justify-content:center;gap:2px}
@@ -285,7 +364,7 @@ footer{
   margin-top:44px;text-align:center;font-size:10px;color:#6B5770;letter-spacing:3px;
   text-transform:uppercase;line-height:2;font-weight:800;
 }
-footer .clear-sample{
+footer button{
   display:block;margin:10px auto 0;background:none;border:2px dashed var(--line);
   color:var(--dim);border-radius:12px;padding:9px 16px;font-size:11px;letter-spacing:2px;
   text-transform:uppercase;min-height:40px;font-weight:800;
@@ -300,12 +379,14 @@ footer .clear-sample{
 <script>
 'use strict';
 /* =====================================================================
-   MOVIE NIGHT — Ortiz Family · Prototype v0.3-COZY ("Family Movie Night")
+   FAMILY MOVIE NIGHT — Ortiz Family · Prototype v0.4
    Friday-night family memory book: round-robin picks + post-movie
-   reactions (thought, favorite quote, favorite memory, ★/5)
-   for Chris, Kat, Sedona, River.
-   Prototype: localStorage only. Gist family sync lands in the full
-   build using the shared safe-merge + tombstone pattern.
+   reactions (thought, quotes, memories, ★/5) for Chris, Kat, Sedona,
+   River. Quotes and memories are lists — add as many as the night
+   deserves.
+   Prototype: localStorage only. Gist family sync lands in v1.0 using
+   the shared safe-merge + tombstone pattern. Standalone app — no
+   dependency on Screening Room (TMDB key has its own Settings here).
    ===================================================================== */
 
 /* ---------- Arizona time helpers (canonical) ---------- */
@@ -324,6 +405,22 @@ var AZ = {
     var d = new Date(p[0], p[1]-1, p[2]);
     return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   },
+  monthDay: function(dateStr){
+    var p = dateStr.split('-').map(Number);
+    var d = new Date(p[0], p[1]-1, p[2]);
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  },
+  daysBetween: function(a, b){
+    return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
+  },
+  addDays: function(dateStr, n){
+    var p = dateStr.split('-').map(Number);
+    var d = new Date(p[0], p[1]-1, p[2]);
+    d.setDate(d.getDate() + n);
+    var mm = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  },
   nextFriday: function(){
     var t = this.today().split('-').map(Number);
     var d = new Date(t[0], t[1]-1, t[2]);
@@ -337,7 +434,7 @@ var AZ = {
 
 /* ---------- localStorage wrapper (canonical) ---------- */
 var Store = {
-  ns: 'srnight_',
+  ns: 'fmn_',
   get: function(key, fallback){
     if (fallback === undefined) fallback = null;
     try {
@@ -354,24 +451,34 @@ var Store = {
 
 /* ---------- the cast ---------- */
 var MEMBERS = [
-  { id:'chris',  name:'Chris',  color:'#FFB454' },
-  { id:'kat',    name:'Kat',    color:'#F2705F' },
-  { id:'sedona', name:'Sedona', color:'#A8C686' },
-  { id:'river',  name:'River',  color:'#8FB8DE' }
+  { id:'chris',  name:'Chris',  color:'#FFB454', onWhite:'#B87A1E' },
+  { id:'kat',    name:'Kat',    color:'#F2705F', onWhite:'#C94F3D' },
+  { id:'sedona', name:'Sedona', color:'#A8C686', onWhite:'#6E9155' },
+  { id:'river',  name:'River',  color:'#8FB8DE', onWhite:'#4E7FAE' }
 ];
 function memberById(id){
   for (var i=0;i<MEMBERS.length;i++) if (MEMBERS[i].id === id) return MEMBERS[i];
   return MEMBERS[0];
 }
 
-/* ---------- TMDB (shares Screening Room's saved key on this origin) ---------- */
+/* ---------- TMDB (own key via Settings; standalone app) ---------- */
 var TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
+function detectCred(raw){
+  var t = (raw || '').trim();
+  if (!t) return null;
+  if (t.indexOf('eyJ') === 0) return { type:'v4', value:t };
+  return { type:'v3', value:t };
+}
 function loadTmdbCred(){
+  var own = Store.get('tmdb_key');
+  if (own) return detectCred(own);
+  // quiet same-origin courtesy: if Screening Room's key exists, use it
   try {
-    var raw = localStorage.getItem('sr_tmdb_key'); // same key Screening Room saves
-    if (!raw) return null;
-    var v = JSON.parse(raw);
-    if (v && v.type && v.value) return v;
+    var raw = localStorage.getItem('sr_tmdb_key');
+    if (raw){
+      var v = JSON.parse(raw);
+      if (v && v.type && v.value) return v;
+    }
   } catch(e){}
   return null;
 }
@@ -413,6 +520,20 @@ function reactionFor(nightId, memberId){
   var r = data.records['rx_' + nightId + '_' + memberId];
   return (r && !r.deleted) ? r : null;
 }
+/* quotes/memories are lists; old single-string records still read fine */
+function rxQuotes(r){
+  if (!r) return [];
+  if (r.quotes && r.quotes.length) return r.quotes;
+  return r.quote ? [r.quote] : [];
+}
+function rxMemories(r){
+  if (!r) return [];
+  if (r.memories && r.memories.length) return r.memories;
+  return r.memory ? [r.memory] : [];
+}
+function rxHasContent(r){
+  return !!(r && (r.stars > 0 || (r.thought||'').length || rxQuotes(r).length || rxMemories(r).length));
+}
 function reactionsFor(nightId){
   var out = [];
   for (var i=0;i<MEMBERS.length;i++){
@@ -443,10 +564,20 @@ function allQuotes(){
   for (var i=0;i<ns.length;i++){
     var rs = reactionsFor(ns[i].id);
     for (var j=0;j<rs.length;j++){
-      if (rs[j].quote) out.push({ quote: rs[j].quote, member: memberById(rs[j].member), movie: ns[i].title });
+      var qs = rxQuotes(rs[j]);
+      for (var k=0;k<qs.length;k++){
+        out.push({ quote: qs[k], member: memberById(rs[j].member), movie: ns[i].title });
+      }
     }
   }
   return out;
+}
+function nightNearDate(dateStr){
+  var list = nights();
+  for (var i=0;i<list.length;i++){
+    if (Math.abs(AZ.daysBetween(dateStr, list[i].date)) <= 2) return list[i];
+  }
+  return null;
 }
 
 /* ---------- sample data (first run only; clearly flagged, one-tap clear) ---------- */
@@ -456,24 +587,24 @@ function seedSample(){
   var seeds = [
     { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
       rx: {
-        chris:  { stars:5, thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', quote:'Hello. My name is Inigo Montoya.', memory:'All four of us saying the Montoya speech together by the end.' },
-        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', quote:'As you wish.', memory:'River gasping at the shrieking eels.' },
-        sedona: { stars:4, thought:'The sword fight was actually so good?', quote:'Inconceivable!', memory:'Dad quoting every line 2 seconds early.' },
-        river:  { stars:5, thought:'THE ROUS ARE REAL.', quote:'Anybody want a peanut?', memory:'Popcorn flew everywhere during the eel jump-scare.' }
+        chris:  { stars:5, thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', quotes:['Hello. My name is Inigo Montoya.'], memories:['All four of us saying the Montoya speech together by the end.'] },
+        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', quotes:['As you wish.'], memories:['River gasping at the shrieking eels.'] },
+        sedona: { stars:4, thought:'The sword fight was actually so good?', quotes:['Inconceivable!'], memories:['Dad quoting every line 2 seconds early.'] },
+        river:  { stars:5, thought:'THE ROUS ARE REAL.', quotes:['Anybody want a peanut?','Have fun storming the castle!'], memories:['Popcorn flew everywhere during the eel jump-scare.'] }
       } },
     { title:'Spider-Man: Into the Spider-Verse', year:2018, date:'2026-07-17', pickedBy:'kat', grad:'linear-gradient(160deg,#4A2E5E,#1E0E2A)',
       rx: {
-        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', quote:'That’s all it is, Miles. A leap of faith.', memory:'Everyone dead silent during the leap scene.' },
-        kat:    { stars:5, thought:'The soundtrack carried the whole pizza dinner.', quote:'Hey.', memory:'Sedona adding the whole soundtrack to her playlist before credits ended.' },
-        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', quote:'It’s a canon event.', memory:'We paused it to argue about which Spider-person we’d each be.' },
-        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', quote:'That could be a baby photo.', memory:'Doing the Miles shoulder-touch to Dad all weekend.' }
+        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', quotes:['That’s all it is, Miles. A leap of faith.'], memories:['Everyone dead silent during the leap scene.'] },
+        kat:    { stars:5, thought:'The soundtrack carried the whole pizza dinner.', quotes:['Hey.'], memories:['Sedona adding the whole soundtrack to her playlist before credits ended.','The four of us doing the "hey" nod at dinner all week.'] },
+        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', quotes:['It’s a canon event.'], memories:['We paused it to argue about which Spider-person we’d each be.'] },
+        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', quotes:['That could be a baby photo.'], memories:['Doing the Miles shoulder-touch to Dad all weekend.'] }
       } },
     { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
       rx: {
-        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', quote:'I have a fanny pack full of gains.', memory:'Kat crying laughing at the cake scene.' },
-        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', quote:'I can’t even with this place.', memory:'The cake scene. I had to pause it.' },
-        sedona: { stars:4, thought:'Good pick, me. The video-game lives idea is clever.', quote:'Strengths: none. Weaknesses: cake.', memory:'River checking his own "strengths and weaknesses" after.' },
-        river:  { stars:5, thought:'CAKE. BOOM.', quote:'Weaknesses: cake.', memory:'We all listed our video game strengths at breakfast.' }
+        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', quotes:['I have a fanny pack full of gains.'], memories:['Kat crying laughing at the cake scene.'] },
+        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', quotes:['I can’t even with this place.'], memories:['The cake scene. I had to pause it.'] },
+        sedona: { stars:4, thought:'Good pick, me. The video-game lives idea is clever.', quotes:['Strengths: none. Weaknesses: cake.'], memories:['River checking his own "strengths and weaknesses" after.'] },
+        river:  { stars:5, thought:'CAKE. BOOM.', quotes:['Weaknesses: cake.'], memories:['We all listed our video game strengths at breakfast.'] }
       } }
   ];
   for (var i=0;i<seeds.length;i++){
@@ -484,7 +615,7 @@ function seedSample(){
     for (var m in s.rx){
       var rid = 'rx_' + nid + '_' + m;
       data.records[rid] = { id:rid, type:'reaction', nightId:nid, member:m,
-        stars:s.rx[m].stars, thought:s.rx[m].thought, quote:s.rx[m].quote, memory:s.rx[m].memory,
+        stars:s.rx[m].stars, thought:s.rx[m].thought, quotes:s.rx[m].quotes, memories:s.rx[m].memories,
         sample:true, updatedAt: now };
     }
   }
@@ -573,6 +704,44 @@ function confirmModal(opts){
     var ok = el('button','btn-primary', opts.confirmText || 'OK');
     ok.addEventListener('click', function(){ close(); if (opts.onConfirm) opts.onConfirm(); });
     row.appendChild(cancel); row.appendChild(ok);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- settings ---------- */
+function openSettings(){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, 'Settings'));
+    box.appendChild(el('div','msub','Family Movie Night'));
+
+    box.appendChild(el('div','f-label','TMDB API key (posters & search)'));
+    var own = Store.get('tmdb_key');
+    var kInput = el('input','f-input');
+    kInput.type = 'password';
+    kInput.autocomplete = 'off';
+    kInput.placeholder = own ? 'Key saved — paste to replace' : 'Paste a free TMDB API key';
+    box.appendChild(kInput);
+    var note = el('p', null, own
+      ? 'A key is saved on this phone. Posters and movie search are on.'
+      : (loadTmdbCred()
+        ? 'Using a key already saved on this phone. Save one here to make this app fully standalone.'
+        : 'Without a key the app still works — you just type titles in by hand. Keys are free at themoviedb.org.'));
+    box.appendChild(note);
+    box.appendChild(el('p', null, 'Family sync across phones arrives in v1.0 — a shared token will live here too.'));
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Close');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-primary','Save');
+    save.addEventListener('click', function(){
+      var v = kInput.value.trim();
+      if (!v){ close(); return; }
+      Store.set('tmdb_key', v);
+      close();
+      render();
+      toast('TMDB key saved 🎬');
+    });
+    row.appendChild(cancel); row.appendChild(save);
     box.appendChild(row);
   });
 }
@@ -667,7 +836,7 @@ function openAddNight(){
       manualWrap.style.display = 'none';
     } else {
       var note = el('div','m-note',
-        'Tip: posters & search appear automatically once a TMDB key is saved in Screening Room’s settings. Manual entry works fine too.');
+        'Tip: add a free TMDB key in Settings and you’ll get posters & movie search here. Manual entry works great too.');
       searchWrap.appendChild(note);
     }
 
@@ -743,7 +912,7 @@ function openAddNight(){
   });
 }
 
-/* ---------- reaction modal (view + edit in one) ---------- */
+/* ---------- reaction modal (view + edit; quotes & memories are lists) ---------- */
 function openReaction(night, member){
   var existing = reactionFor(night.id, member.id);
   var stars = existing ? existing.stars : 0;
@@ -784,28 +953,68 @@ function openReaction(night, member){
     thought.value = existing ? (existing.thought || '') : '';
     box.appendChild(thought);
 
-    box.appendChild(el('div','f-label','Favorite quote'));
-    var quote = el('input','f-input');
-    quote.type = 'text';
-    quote.placeholder = 'The line you’ll be repeating all week';
-    quote.value = existing ? (existing.quote || '') : '';
-    box.appendChild(quote);
+    /* quotes — as many as you want */
+    box.appendChild(el('div','f-label','Favorite quotes'));
+    var quoteList = el('div','multi-list');
+    function addQuoteInput(val){
+      var q = el('input','f-input');
+      q.type = 'text';
+      q.placeholder = quoteList.children.length
+        ? 'Another line worth keeping…'
+        : 'The line you’ll be repeating all week';
+      q.value = val || '';
+      quoteList.appendChild(q);
+      return q;
+    }
+    var exQuotes = rxQuotes(existing);
+    if (exQuotes.length) exQuotes.forEach(function(q){ addQuoteInput(q); });
+    else addQuoteInput('');
+    box.appendChild(quoteList);
+    var moreQ = el('button','linky','+ add another quote');
+    moreQ.type = 'button';
+    moreQ.addEventListener('click', function(){ addQuoteInput('').focus(); });
+    box.appendChild(moreQ);
 
-    box.appendChild(el('div','f-label','Favorite movie night memory'));
-    var memory = el('textarea','f-area');
-    memory.placeholder = 'Not the movie — the night. What happened on the couch?';
-    memory.value = existing ? (existing.memory || '') : '';
-    box.appendChild(memory);
+    /* memories — as many as you want */
+    box.appendChild(el('div','f-label','Favorite movie night memories'));
+    var memList = el('div','multi-list');
+    function addMemInput(val){
+      var m = el('textarea','f-area');
+      m.placeholder = memList.children.length
+        ? 'Another moment from the night…'
+        : 'Not the movie — the night. What happened on the couch?';
+      m.value = val || '';
+      memList.appendChild(m);
+      return m;
+    }
+    var exMems = rxMemories(existing);
+    if (exMems.length) exMems.forEach(function(m){ addMemInput(m); });
+    else addMemInput('');
+    box.appendChild(memList);
+    var moreM = el('button','linky','+ add another memory');
+    moreM.type = 'button';
+    moreM.addEventListener('click', function(){ addMemInput('').focus(); });
+    box.appendChild(moreM);
 
     var row = el('div','modal-buttons');
     var cancel = el('button','btn-secondary','Cancel');
     cancel.addEventListener('click', close);
     var save = el('button','btn-gold', existing ? 'Update' : 'Save Reaction');
     save.addEventListener('click', function(){
+      var quotes = [];
+      for (var i=0;i<quoteList.children.length;i++){
+        var v = quoteList.children[i].value.trim();
+        if (v) quotes.push(v);
+      }
+      var memories = [];
+      for (var j=0;j<memList.children.length;j++){
+        var mv = memList.children[j].value.trim();
+        if (mv) memories.push(mv);
+      }
       var id = 'rx_' + night.id + '_' + member.id;
       data.records[id] = {
         id:id, type:'reaction', nightId:night.id, member:member.id,
-        stars:stars, thought:thought.value.trim(), quote:quote.value.trim(), memory:memory.value.trim(),
+        stars:stars, thought:thought.value.trim(), quotes:quotes, memories:memories,
         updatedAt: Date.now()
       };
       saveData();
@@ -848,25 +1057,28 @@ function render(){
   /* header */
   var header = el('header');
   var h1 = el('h1');
-  h1.appendChild(document.createTextNode('Movie Night'));
-  var pop = el('span','pop','!');
-  h1.appendChild(pop);
+  h1.appendChild(document.createTextNode('Family Movie Night'));
+  h1.appendChild(el('span','pop','!'));
   header.appendChild(h1);
   header.appendChild(el('div','now','The Ortiz Family · Fridays on the Couch'));
+  var doo = el('div','doodles','🎞️ 🍿 ⭐');
+  doo.setAttribute('aria-hidden','true');
+  header.appendChild(doo);
   app.appendChild(header);
 
-  /* tonight's pick */
+  /* projector screen — up next */
   var np = nextPicker();
-  var tonight = el('div','tonight');
-  tonight.appendChild(el('div','label','Up next to pick'));
-  var pn = el('div','pickname', 'It’s ' + np.name + '’s turn! 🍿');
-  pn.style.color = np.color;
-  tonight.appendChild(pn);
-  tonight.appendChild(el('div','showdate','Next movie night · ' + AZ.prettyLong(AZ.nextFriday())));
+  var sb = el('div','screenbox');
+  var screen = el('div','screen');
+  screen.appendChild(el('div','label','Up next…'));
+  var pn = el('div','pickname', 'It’s ' + np.name + '’s turn to pick! 🍿');
+  pn.style.color = np.onWhite;
+  screen.appendChild(pn);
+  screen.appendChild(el('div','showdate','Next movie night · ' + AZ.prettyLong(AZ.nextFriday())));
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
-    if (m.id === np.id) chip.style.borderColor = m.color;
+    if (m.id === np.id) chip.style.background = m.onWhite;
     var dot = el('span','dot', m.name.charAt(0));
     dot.style.background = m.color;
     chip.appendChild(dot);
@@ -874,8 +1086,67 @@ function render(){
     rot.appendChild(chip);
     if (i < MEMBERS.length - 1) rot.appendChild(el('span','rot-arrow','→'));
   });
-  tonight.appendChild(rot);
-  app.appendChild(tonight);
+  screen.appendChild(rot);
+  sb.appendChild(screen);
+  sb.appendChild(el('div','screen-stand'));
+  app.appendChild(sb);
+
+  /* friday lineup — calendar */
+  var lineup = el('div','lineup');
+  lineup.appendChild(el('div','lu-head','📅 Coming Attractions'));
+  var nf = AZ.nextFriday();
+  var today = AZ.today();
+  var npIdx = MEMBERS.indexOf(np);
+  for (var u=0; u<4; u++){
+    var fd = AZ.addDays(nf, u*7);
+    var pm = MEMBERS[(npIdx + u) % MEMBERS.length];
+    var row = el('div','lu-row' + (u===3 ? ' last' : ''));
+    var dt = el('div','lu-date');
+    dt.appendChild(el('div','d1', AZ.monthDay(fd)));
+    var away = AZ.daysBetween(today, fd);
+    dt.appendChild(el('div','d2', away === 0 ? 'Tonight!' : away === 1 ? 'Tomorrow' : 'in ' + away + ' days'));
+    row.appendChild(dt);
+    var lp = el('div','lu-pick');
+    var ld = el('span','dot', pm.name.charAt(0));
+    ld.style.background = pm.color;
+    lp.appendChild(ld);
+    var lname = el('span', null, pm.name + '’s pick');
+    lname.style.color = pm.color;
+    lp.appendChild(lname);
+    row.appendChild(lp);
+    row.appendChild(el('div','lu-fill'));
+    lineup.appendChild(row);
+  }
+  lineup.appendChild(el('div','lu-head second','🍿 Recent Fridays'));
+  for (var p=1; p<=4; p++){
+    var pf = AZ.addDays(nf, -7*p);
+    var night = nightNearDate(pf);
+    var prow = el('div','lu-row' + (p===4 ? ' last' : ''));
+    var pdt = el('div','lu-date');
+    pdt.appendChild(el('div','d1', AZ.monthDay(pf)));
+    pdt.appendChild(el('div','d2','Friday'));
+    prow.appendChild(pdt);
+    if (night){
+      var picker = memberById(night.pickedBy);
+      var t = el('div','lu-title', night.title);
+      prow.appendChild(t);
+      var pd = el('div','pdots');
+      MEMBERS.forEach(function(m){
+        var r = reactionFor(night.id, m.id);
+        var dot = el('span','pdot' + (rxHasContent(r) ? '' : ' off'), m.name.charAt(0));
+        if (rxHasContent(r)){
+          dot.style.background = m.color;
+          dot.style.borderColor = m.color;
+        }
+        pd.appendChild(dot);
+      });
+      prow.appendChild(pd);
+    } else {
+      prow.appendChild(el('div','lu-title skip','no movie night 😴'));
+    }
+    lineup.appendChild(prow);
+  }
+  app.appendChild(lineup);
 
   /* quote sticky note */
   var quotes = allQuotes();
@@ -902,8 +1173,11 @@ function render(){
 
   /* memory book */
   var list = nights();
+  var divider = el('div','film-divider');
+  divider.setAttribute('aria-hidden','true');
+  app.appendChild(divider);
   app.appendChild(el('div','section-label','Our Movie Night Memory Book'));
-  app.appendChild(el('div','section-sub', list.length ? list.length + ' night' + (list.length===1?'':'s') + ' together' : ''));
+  app.appendChild(el('div','section-sub', list.length ? list.length + ' night' + (list.length===1?'':'s') + ' together 🍿' : ''));
   if (!list.length){
     var es = el('div','empty-state');
     es.appendChild(el('div','big','🛋️🍿'));
@@ -934,12 +1208,18 @@ function render(){
 
     var ht = el('div','head-txt');
     ht.appendChild(el('h3', null, n.title));
-    ht.appendChild(el('div','meta', (n.year ? n.year + ' · ' : '') + AZ.pretty(n.date)));
-    var pill = el('span','pickpill', picker.name + '’s pick');
-    pill.style.background = picker.color;
-    ht.appendChild(pill);
+    var meta = el('div','meta', (n.year ? n.year + ' · ' : '') + AZ.pretty(n.date));
     var avg = familyAvg(n.id);
-    if (avg !== null) ht.appendChild(el('span','avgbadge', avg.toFixed(1) + ' ★'));
+    if (avg !== null) meta.appendChild(el('span','avgbadge', avg.toFixed(1) + ' ★'));
+    ht.appendChild(meta);
+    var ticket = el('span','ticket');
+    var adm = el('span','admit','🎟');
+    adm.style.background = picker.color;
+    var tnm = el('span','tname', picker.name + '’s pick');
+    tnm.style.background = picker.color;
+    ticket.appendChild(adm);
+    ticket.appendChild(tnm);
+    ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
     head.appendChild(ht);
     card.appendChild(head);
@@ -953,8 +1233,9 @@ function render(){
       who.style.color = m.color;
       row.appendChild(who);
       if (r && r.stars) row.appendChild(starsNode(r.stars));
-      if (r && (r.thought || r.quote || r.memory)){
-        row.appendChild(el('span','snippet', r.thought || r.quote || r.memory));
+      var snippetText = r ? (r.thought || rxQuotes(r)[0] || rxMemories(r)[0] || '') : '';
+      if (snippetText){
+        row.appendChild(el('span','snippet', snippetText));
       } else if (!r || !r.stars){
         row.appendChild(el('span','snippet empty','Tap to add your reaction'));
       } else {
@@ -976,9 +1257,12 @@ function render(){
 
   /* footer */
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Movie Night · Ortiz Family · Prototype v0.3 · Cozy'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · Prototype v0.4'));
+  var st = el('button', null, '⚙︎ Settings');
+  st.addEventListener('click', openSettings);
+  footer.appendChild(st);
   if (hasSample()){
-    var cs = el('button','clear-sample','Clear sample data');
+    var cs = el('button', null, 'Clear sample data');
     cs.addEventListener('click', function(){
       confirmModal({
         title:'Clear the sample nights?',
