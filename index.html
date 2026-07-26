@@ -466,7 +466,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v1.9 · Segmented Filters';
+var APP_VERSION = 'v2.0 · Watched from Waiting';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -2423,6 +2423,11 @@ function renderDetail(){
     var toWatch = el('button','mark-btn','▶ Start watching');
     on(toWatch, 'click', function(){ moveStatus(entry,'watching'); notice('Moved to Watching.'); });
     topActions.appendChild(toWatch);
+    // movies get watched, not "watched over weeks" — and an already-seen series
+    // is the same case. Skip Watching and file the ticket straight from Waiting.
+    var seenIt = el('button','mark-btn','✓ Watched it');
+    on(seenIt, 'click', function(){ openMovieFinish(entry); });
+    topActions.appendChild(seenIt);
   }
   topActions.appendChild(removeBtn(entry));
   head.appendChild(topActions);
@@ -2478,7 +2483,7 @@ function renderMovieDetail(container, entry){
   var h4 = el('h4', null, 'Feature');
   if(meta && meta.runtime){ h4.appendChild(el('span','sub2', ' · ' + meta.runtime + ' min')); }
   row.appendChild(h4);
-  if(entry.status==='watching'){
+  if(entry.status==='watching' || entry.status==='wishlist'){
     var b = el('button','mark-btn','✓ Mark watched & rate');
     on(b, 'click', function(){ openMovieFinish(entry); });
     row.appendChild(b);
@@ -2491,8 +2496,10 @@ function renderMovieDetail(container, entry){
 function openMovieFinish(entry){
   entry._rating = true;
   state.view='detail'; state.detail={type:entry.type,id:entry.id};
-  window.scrollTo(0,0);
   rerender();
+  var rb = document.querySelector('.rate-box');
+  if(rb) rb.scrollIntoView({block:'start'});
+  else window.scrollTo(0,0);
 }
 
 function renderSeasons(container, entry){
