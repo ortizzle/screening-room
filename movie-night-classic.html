@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Movie Night — Ortiz Family (Classic)</title>
+<meta name="theme-color" content="#0F0D0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Movie Night">
+<meta name="description" content="The Ortiz family movie night memory book — picks, reactions, quotes, and memories.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Limelight&family=Josefin+Sans:ital,wght@0,300..700;1,400&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+
+:root{
+  --stage:#0F0D0A;
+  --card:#1A1712;
+  --card-2:#26211A;
+  --line:#3E3526;
+  --cream:#F5EFDD;
+  --dim:#9C8F76;
+  --gold:#D4AF37;
+  --gold-soft:#E8CB6B;
+  --ruby:#D06456;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--stage);
+  background-image:
+    radial-gradient(ellipse 90% 42% at 50% -6%, #2A2312 0%, transparent 62%),
+    radial-gradient(ellipse 70% 30% at 50% 108%, #1E180C 0%, transparent 70%);
+  color:var(--cream);
+  font-family:'Josefin Sans',system-ui,sans-serif;
+  min-height:100vh;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:calc(60px + env(safe-area-inset-bottom));
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px}
+button{cursor:pointer;font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* header */
+header{padding-top:30px;text-align:center}
+header .presents{
+  font-size:10px;letter-spacing:5px;color:var(--dim);text-transform:uppercase;font-weight:600;
+}
+header h1{
+  font-family:'Limelight',cursive;
+  font-weight:400;
+  font-size:clamp(30px,8vw,48px);
+  color:var(--gold);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-top:8px;
+  text-shadow:0 0 26px rgba(212,175,55,.3);
+}
+header .deco{
+  display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;
+  color:var(--gold);font-size:11px;
+}
+header .deco::before,header .deco::after{
+  content:'';height:1px;width:min(120px,26vw);
+  background:linear-gradient(90deg,transparent,var(--gold));
+}
+header .deco::after{background:linear-gradient(90deg,var(--gold),transparent)}
+header .now{font-size:10px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;margin-top:10px;font-weight:600}
+
+/* now selecting — gilded frame */
+.tonight{
+  margin-top:26px;background:var(--card);
+  border:1px solid var(--gold);border-radius:6px;
+  box-shadow:inset 0 0 0 4px var(--card), inset 0 0 0 5px rgba(212,175,55,.55), 0 0 30px rgba(212,175,55,.08);
+  padding:24px 18px;text-align:center;
+}
+.tonight .label{font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;font-weight:600}
+.tonight .pickname{
+  font-family:'Limelight',cursive;font-weight:400;
+  font-size:clamp(22px,6vw,32px);margin-top:12px;letter-spacing:1.5px;text-transform:uppercase;
+}
+.tonight .showdate{font-size:12px;color:var(--dim);margin-top:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600}
+.rotation{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:18px;flex-wrap:wrap}
+.rot-chip{
+  display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);
+  border-radius:99px;padding:6px 14px 6px 7px;font-size:12px;font-weight:600;color:var(--dim);
+  letter-spacing:1.5px;text-transform:uppercase;min-height:38px;
+}
+.rot-chip .dot{
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#141005;font-family:'Josefin Sans',sans-serif;
+}
+.rot-chip.current{border-color:var(--gold);color:var(--cream);box-shadow:0 0 14px rgba(212,175,55,.25)}
+.rot-arrow{color:var(--line);font-size:12px}
+
+/* quote — engraved title card */
+.quotewall{margin-top:30px;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none}
+.quotewall .qmark{
+  font-family:'Cormorant Garamond',serif;font-size:44px;color:var(--gold);line-height:.4;
+}
+.quotewall blockquote{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;
+  font-size:21px;line-height:1.5;color:var(--cream);max-width:540px;margin:10px auto 0;
+}
+.quotewall .attr{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:12px;font-weight:600}
+.quotewall .attr b{font-weight:700}
+.quotewall .hint{font-size:9px;letter-spacing:2px;color:#57492E;text-transform:uppercase;margin-top:8px;font-weight:600}
+
+/* log button */
+.log-btn{
+  display:block;width:100%;margin-top:28px;border:none;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),#B8922C);
+  padding:17px;font-weight:700;font-size:15px;letter-spacing:3px;
+  color:#141005;text-transform:uppercase;min-height:54px;
+  box-shadow:0 6px 20px rgba(212,175,55,.25);
+}
+.log-btn:active{transform:translateY(1px)}
+
+.section-label{
+  font-size:12px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;
+  margin:34px 0 4px;text-align:center;font-weight:600;
+}
+.section-label::before{content:'★ '}
+.section-label::after{content:' ★'}
+.section-sub{font-size:10px;color:var(--dim);text-align:center;margin-bottom:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+
+/* night cards — film strip edge */
+.night{
+  margin-top:16px;position:relative;background:var(--card);
+  border:1px solid var(--line);border-radius:6px;
+  padding:16px 14px 12px 38px;
+}
+.night::before{
+  content:'';position:absolute;left:10px;top:8px;bottom:8px;width:12px;border-radius:2px;
+  background-color:#0B0906;
+  background-image:repeating-linear-gradient(to bottom, transparent 0 5px, rgba(212,175,55,.35) 5px 11px, transparent 11px 16px);
+}
+.night .head{display:flex;gap:14px}
+.night .poster{
+  width:60px;height:88px;border-radius:3px;flex-shrink:0;
+  border:1px solid var(--gold);box-shadow:0 0 0 3px var(--card), 0 0 0 4px rgba(212,175,55,.35);
+  overflow:hidden;display:flex;align-items:flex-end;padding:5px;
+  font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.2;
+  background:var(--card-2);color:var(--cream);
+}
+.night .poster img{width:100%;height:100%;object-fit:cover}
+.night .head-txt{flex:1;min-width:0;padding-right:26px}
+.night h3{
+  font-family:'Limelight',cursive;font-weight:400;font-size:16px;line-height:1.3;
+  color:var(--gold-soft);text-transform:uppercase;letter-spacing:1px;
+}
+.night .meta{font-size:11px;color:var(--dim);margin-top:5px;letter-spacing:2px;text-transform:uppercase;font-weight:600}
+.night .pickpill{
+  display:inline-block;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  border:1px solid;border-radius:99px;padding:4px 11px;margin-top:9px;
+}
+.night .avgbadge{font-size:12px;font-weight:700;color:var(--gold);margin-top:9px;margin-left:8px;display:inline-block;letter-spacing:1px}
+.night .del{
+  background:none;border:none;color:#57492E;font-size:15px;padding:8px 10px;
+  position:absolute;top:2px;right:2px;min-width:36px;min-height:36px;
+}
+.night .del:active{color:var(--ruby)}
+.rx-rows{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.rx-row{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  background:var(--card-2);border:1px solid transparent;border-radius:6px;
+  padding:9px 12px;min-height:46px;
+}
+.rx-row:active,.rx-row:focus-visible{border-color:var(--line)}
+.rx-row .who{
+  font-size:11px;font-weight:700;width:64px;flex-shrink:0;letter-spacing:1.5px;text-transform:uppercase;
+}
+.rx-row .stars{font-size:13px;color:var(--gold);flex-shrink:0;letter-spacing:2px}
+.rx-row .stars .off{color:#453B26}
+.rx-row .snippet{
+  flex:1;font-family:'Cormorant Garamond',serif;font-size:14.5px;color:var(--dim);font-style:italic;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.rx-row .snippet.empty{color:#57492E}
+.rx-row .chev{color:#57492E;font-size:15px}
+.sampletag{
+  font-size:8px;letter-spacing:2px;color:#57492E;text-transform:uppercase;font-weight:700;
+  border:1px dashed var(--line);border-radius:4px;padding:2px 7px;margin-left:8px;vertical-align:2px;
+}
+
+.empty-state{
+  margin-top:20px;text-align:center;color:var(--dim);font-size:14px;line-height:1.8;font-weight:600;
+  background:var(--card);border:1px dashed var(--line);border-radius:6px;padding:34px 20px;
+  letter-spacing:.5px;
+}
+.empty-state .big{font-family:'Limelight',cursive;font-size:22px;color:var(--gold);letter-spacing:2px}
+
+/* modals */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(6,5,3,.82);display:flex;align-items:flex-end;
+  justify-content:center;z-index:1000;padding:16px;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+}
+@media(min-width:600px){.modal-overlay{align-items:center}}
+.modal-box{
+  background:var(--card);border:1px solid var(--gold);border-radius:8px;padding:22px;
+  box-shadow:inset 0 0 0 4px var(--card), inset 0 0 0 5px rgba(212,175,55,.45);
+  width:100%;max-width:430px;max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.modal-box h3{
+  font-family:'Limelight',cursive;font-weight:400;font-size:19px;letter-spacing:1px;text-transform:uppercase;
+}
+.modal-box .msub{font-size:10px;color:var(--dim);letter-spacing:2.5px;text-transform:uppercase;margin-top:7px;font-weight:600}
+.modal-box p{font-size:14px;color:var(--dim);margin-top:10px;line-height:1.6;font-weight:600}
+.modal-buttons{display:flex;gap:12px;margin-top:22px}
+.modal-buttons button{
+  flex:1;min-height:50px;border-radius:8px;font-size:13px;font-weight:700;border:none;
+  letter-spacing:2.5px;text-transform:uppercase;
+}
+.btn-primary{background:linear-gradient(135deg,var(--gold),#B8922C);color:#141005}
+.btn-primary:disabled{opacity:.45;cursor:default}
+.btn-gold{background:linear-gradient(135deg,var(--gold-soft),var(--gold));color:#141005}
+.btn-secondary{background:var(--card-2);color:var(--dim);border:1px solid var(--line)}
+
+.f-label{
+  font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;
+  margin:18px 0 8px;font-weight:700;
+}
+.f-input,.f-area{
+  width:100%;background:var(--card-2);border:1px solid var(--line);border-radius:8px;
+  padding:12px 14px;color:var(--cream);font:inherit;font-size:15px;
+}
+.f-input:focus,.f-area:focus{border-color:var(--gold);outline:none}
+.f-area{min-height:74px;resize:vertical;line-height:1.5}
+.f-input::placeholder,.f-area::placeholder{color:#57492E}
+input[type="date"].f-input{min-height:50px;-webkit-appearance:none;appearance:none}
+
+/* star picker */
+.starpick{display:flex;justify-content:center;gap:2px}
+.starpick button{
+  background:none;border:none;font-size:32px;min-width:48px;min-height:52px;line-height:1;
+  color:#453B26;transition:transform .12s, color .12s;
+}
+.starpick button.on{color:var(--gold);transform:scale(1.08);text-shadow:0 0 16px rgba(212,175,55,.5)}
+.starpick-hint{text-align:center;font-size:10px;color:var(--dim);margin-top:6px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+
+/* picker chips */
+.pick-chips{display:flex;gap:8px;flex-wrap:wrap}
+.pick-chip{
+  flex:1;min-width:72px;min-height:50px;border-radius:8px;border:1px solid var(--line);
+  background:var(--card-2);font-weight:700;font-size:12px;color:var(--dim);
+  letter-spacing:1.5px;text-transform:uppercase;
+}
+.pick-chip.on{color:#141005;border-color:transparent}
+
+/* tmdb search inside modal */
+.m-results{margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.m-result{
+  display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:9px 11px;
+  background:var(--card);border:none;border-bottom:1px solid var(--line);min-height:52px;
+}
+.m-result:last-child{border-bottom:none}
+.m-result:active{background:var(--card-2)}
+.m-result .mini{
+  width:34px;height:50px;border-radius:3px;flex-shrink:0;background:var(--card-2);
+  border:1px solid var(--line);overflow:hidden;
+}
+.m-result .mini img{width:100%;height:100%;object-fit:cover}
+.m-result .t{font-weight:700;font-size:14px}
+.m-result .y{font-size:10px;color:var(--dim);margin-top:3px;letter-spacing:2px;font-weight:600}
+.m-note{font-size:13px;color:var(--dim);margin-top:10px;line-height:1.6;font-style:italic;font-weight:600}
+.linky{background:none;border:none;color:var(--gold);font-size:12px;font-weight:700;padding:10px 0;letter-spacing:1.5px;text-transform:uppercase;text-decoration:underline;text-underline-offset:3px}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(24px + env(safe-area-inset-bottom));
+  background:var(--gold);color:#141005;font-weight:700;font-size:13px;letter-spacing:1px;
+  padding:13px 22px;border-radius:99px;z-index:1200;box-shadow:0 8px 26px rgba(0,0,0,.6);
+  opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1}
+
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:1500;overflow:hidden}
+.confetti i{
+  position:absolute;top:-4vh;width:8px;height:13px;border-radius:1px;display:block;
+  animation:fall linear forwards;
+}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+
+footer{
+  margin-top:46px;text-align:center;font-size:9px;color:#57492E;letter-spacing:4px;
+  text-transform:uppercase;line-height:2.2;font-weight:600;
+}
+footer .clear-sample{
+  display:block;margin:10px auto 0;background:none;border:1px dashed var(--line);
+  color:var(--dim);border-radius:8px;padding:9px 16px;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;min-height:40px;font-weight:600;
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   MOVIE NIGHT — Ortiz Family · Prototype v0.3-CLASSIC ("Classic Movie")
+   Friday-night family memory book: round-robin picks + post-movie
+   reactions (thought, favorite quote, favorite memory, ★/5)
+   for Chris, Kat, Sedona, River.
+   Prototype: localStorage only. Gist family sync lands in the full
+   build using the shared safe-merge + tombstone pattern.
+   ===================================================================== */
+
+/* ---------- Arizona time helpers (canonical) ---------- */
+var AZ = {
+  tz: 'America/Phoenix',
+  today: function(){
+    return new Intl.DateTimeFormat('en-CA', { timeZone: this.tz }).format(new Date());
+  },
+  pretty: function(dateStr){
+    var p = dateStr.split('-').map(Number);
+    var d = new Date(p[0], p[1]-1, p[2]);
+    return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  },
+  prettyLong: function(dateStr){
+    var p = dateStr.split('-').map(Number);
+    var d = new Date(p[0], p[1]-1, p[2]);
+    return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+  },
+  nextFriday: function(){
+    var t = this.today().split('-').map(Number);
+    var d = new Date(t[0], t[1]-1, t[2]);
+    var add = (5 - d.getDay() + 7) % 7; // 0 if today IS Friday
+    d.setDate(d.getDate() + add);
+    var mm = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+};
+
+/* ---------- localStorage wrapper (canonical) ---------- */
+var Store = {
+  ns: 'srnight_',
+  get: function(key, fallback){
+    if (fallback === undefined) fallback = null;
+    try {
+      var raw = localStorage.getItem(this.ns + key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch(e){ return fallback; }
+  },
+  set: function(key, value){
+    try { localStorage.setItem(this.ns + key, JSON.stringify(value)); return true; }
+    catch(e){ return false; }
+  },
+  remove: function(key){ localStorage.removeItem(this.ns + key); }
+};
+
+/* ---------- the cast ---------- */
+var MEMBERS = [
+  { id:'chris',  name:'Chris',  color:'#E3B341' },
+  { id:'kat',    name:'Kat',    color:'#D06456' },
+  { id:'sedona', name:'Sedona', color:'#6FAF8E' },
+  { id:'river',  name:'River',  color:'#6E9CD1' }
+];
+function memberById(id){
+  for (var i=0;i<MEMBERS.length;i++) if (MEMBERS[i].id === id) return MEMBERS[i];
+  return MEMBERS[0];
+}
+
+/* ---------- TMDB (shares Screening Room's saved key on this origin) ---------- */
+var TMDB_IMG = 'https://image.tmdb.org/t/p/w342';
+function loadTmdbCred(){
+  try {
+    var raw = localStorage.getItem('sr_tmdb_key'); // same key Screening Room saves
+    if (!raw) return null;
+    var v = JSON.parse(raw);
+    if (v && v.type && v.value) return v;
+  } catch(e){}
+  return null;
+}
+function tmdbSearch(query){
+  var cred = loadTmdbCred();
+  if (!cred) return Promise.reject(new Error('NO_KEY'));
+  var url = 'https://api.themoviedb.org/3/search/movie?include_adult=false&query=' + encodeURIComponent(query);
+  var headers = {};
+  if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
+  else url += '&api_key=' + encodeURIComponent(cred.value);
+  return fetch(url, { headers: headers }).then(function(res){
+    if (!res.ok) throw new Error('TMDB ' + res.status);
+    return res.json();
+  });
+}
+
+/* ---------- data ---------- */
+var data = Store.get('data', { records:{} });
+if (!data.records) data.records = {};
+
+function saveData(){
+  data.updatedAt = Date.now();
+  if (!Store.set('data', data)) toast('Storage full — could not save');
+}
+function liveRecords(type){
+  var out = [];
+  for (var id in data.records){
+    var r = data.records[id];
+    if (r && !r.deleted && r.type === type) out.push(r);
+  }
+  return out;
+}
+function nights(){
+  return liveRecords('night').sort(function(a,b){
+    return a.date === b.date ? (b.updatedAt||0)-(a.updatedAt||0) : (a.date < b.date ? 1 : -1);
+  });
+}
+function reactionFor(nightId, memberId){
+  var r = data.records['rx_' + nightId + '_' + memberId];
+  return (r && !r.deleted) ? r : null;
+}
+function reactionsFor(nightId){
+  var out = [];
+  for (var i=0;i<MEMBERS.length;i++){
+    var r = reactionFor(nightId, MEMBERS[i].id);
+    if (r) out.push(r);
+  }
+  return out;
+}
+function familyAvg(nightId){
+  var rs = reactionsFor(nightId).filter(function(r){ return r.stars > 0; });
+  if (!rs.length) return null;
+  var sum = 0;
+  for (var i=0;i<rs.length;i++) sum += rs[i].stars;
+  return sum / rs.length;
+}
+function nextPicker(){
+  var list = nights();
+  if (!list.length) return MEMBERS[0];
+  var lastId = list[0].pickedBy;
+  for (var i=0;i<MEMBERS.length;i++){
+    if (MEMBERS[i].id === lastId) return MEMBERS[(i+1) % MEMBERS.length];
+  }
+  return MEMBERS[0];
+}
+function allQuotes(){
+  var out = [];
+  var ns = nights();
+  for (var i=0;i<ns.length;i++){
+    var rs = reactionsFor(ns[i].id);
+    for (var j=0;j<rs.length;j++){
+      if (rs[j].quote) out.push({ quote: rs[j].quote, member: memberById(rs[j].member), movie: ns[i].title });
+    }
+  }
+  return out;
+}
+
+/* ---------- sample data (first run only; clearly flagged, one-tap clear) ---------- */
+function seedSample(){
+  if (Store.get('seeded') || nights().length) return;
+  var now = Date.now();
+  var seeds = [
+    { title:'The Princess Bride', year:1987, date:'2026-07-10', pickedBy:'chris', grad:'linear-gradient(160deg,#8A6A2E,#3A2A0E)',
+      rx: {
+        chris:  { stars:5, thought:'Still perfect. The kids finally got why I say "inconceivable" all the time.', quote:'Hello. My name is Inigo Montoya.', memory:'All four of us saying the Montoya speech together by the end.' },
+        kat:    { stars:4, thought:'Holds up better than almost anything from the 80s.', quote:'As you wish.', memory:'River gasping at the shrieking eels.' },
+        sedona: { stars:4, thought:'The sword fight was actually so good?', quote:'Inconceivable!', memory:'Dad quoting every line 2 seconds early.' },
+        river:  { stars:5, thought:'THE ROUS ARE REAL.', quote:'Anybody want a peanut?', memory:'Popcorn flew everywhere during the eel jump-scare.' }
+      } },
+    { title:'Spider-Man: Into the Spider-Verse', year:2018, date:'2026-07-17', pickedBy:'kat', grad:'linear-gradient(160deg,#4A2E5E,#1E0E2A)',
+      rx: {
+        chris:  { stars:5, thought:'Best-looking animated movie ever made. Not close.', quote:'That’s all it is, Miles. A leap of faith.', memory:'Everyone dead silent during the leap scene.' },
+        kat:    { stars:5, thought:'The soundtrack carried the whole pizza dinner.', quote:'Hey.', memory:'Sedona adding the whole soundtrack to her playlist before credits ended.' },
+        sedona: { stars:5, thought:'No notes. Peni Parker deserved more scenes.', quote:'It’s a canon event.', memory:'We paused it to argue about which Spider-person we’d each be.' },
+        river:  { stars:4, thought:'Spider-Ham is the best character and I will not be debating this.', quote:'That could be a baby photo.', memory:'Doing the Miles shoulder-touch to Dad all weekend.' }
+      } },
+    { title:'Jumanji: Welcome to the Jungle', year:2017, date:'2026-07-24', pickedBy:'sedona', grad:'linear-gradient(160deg,#2E5E4A,#0E2A1E)',
+      rx: {
+        chris:  { stars:3, thought:'Fun, loud, forgettable. Great pick for pizza night though.', quote:'I have a fanny pack full of gains.', memory:'Kat crying laughing at the cake scene.' },
+        kat:    { stars:4, thought:'Jack Black playing a teenage girl is a career highlight.', quote:'I can’t even with this place.', memory:'The cake scene. I had to pause it.' },
+        sedona: { stars:4, thought:'Good pick, me. The video-game lives idea is clever.', quote:'Strengths: none. Weaknesses: cake.', memory:'River checking his own "strengths and weaknesses" after.' },
+        river:  { stars:5, thought:'CAKE. BOOM.', quote:'Weaknesses: cake.', memory:'We all listed our video game strengths at breakfast.' }
+      } }
+  ];
+  for (var i=0;i<seeds.length;i++){
+    var s = seeds[i];
+    var nid = 'night_seed_' + i;
+    data.records[nid] = { id:nid, type:'night', title:s.title, year:s.year, date:s.date,
+      pickedBy:s.pickedBy, grad:s.grad, sample:true, updatedAt: now };
+    for (var m in s.rx){
+      var rid = 'rx_' + nid + '_' + m;
+      data.records[rid] = { id:rid, type:'reaction', nightId:nid, member:m,
+        stars:s.rx[m].stars, thought:s.rx[m].thought, quote:s.rx[m].quote, memory:s.rx[m].memory,
+        sample:true, updatedAt: now };
+    }
+  }
+  Store.set('seeded', true);
+  saveData();
+}
+function hasSample(){
+  for (var id in data.records){
+    var r = data.records[id];
+    if (r && r.sample && !r.deleted) return true;
+  }
+  return false;
+}
+function clearSample(){
+  var now = Date.now();
+  for (var id in data.records){
+    var r = data.records[id];
+    if (r && r.sample && !r.deleted){
+      data.records[id] = { id:r.id, type:r.type, deleted:true, sample:true, updatedAt:now };
+    }
+  }
+  saveData();
+  render();
+  toast('Sample nights cleared — the stage is yours');
+}
+
+/* ---------- tiny DOM helpers ---------- */
+function el(tag, cls, text){
+  var n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = text;
+  return n;
+}
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+function starString(n){
+  var s = '';
+  for (var i=1;i<=5;i++) s += (i<=n ? '★' : '☆');
+  return s;
+}
+function starsNode(n){
+  var span = el('span','stars');
+  for (var i=1;i<=5;i++){
+    span.appendChild(el('span', i<=n ? '' : 'off', i<=n ? '★' : '☆'));
+  }
+  return span;
+}
+function confettiBurst(){
+  var colors = ['#D4AF37','#E8CB6B','#F5EFDD','#D06456','#6FAF8E','#6E9CD1'];
+  var wrap = el('div','confetti');
+  for (var i=0;i<44;i++){
+    var p = document.createElement('i');
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.background = colors[i % colors.length];
+    p.style.animationDuration = (1.6 + Math.random()*1.4) + 's';
+    p.style.animationDelay = (Math.random()*0.4) + 's';
+    p.style.transform = 'rotate(' + Math.floor(Math.random()*360) + 'deg)';
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(function(){ wrap.remove(); }, 3600);
+}
+
+/* ---------- generic modal shell ---------- */
+function openModal(build){
+  var overlay = el('div','modal-overlay');
+  var box = el('div','modal-box');
+  overlay.appendChild(box);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+  build(box, function close(){ overlay.remove(); });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+function confirmModal(opts){
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, opts.title));
+    box.appendChild(el('p', null, opts.message));
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary', opts.cancelText || 'Cancel');
+    cancel.addEventListener('click', close);
+    var ok = el('button','btn-primary', opts.confirmText || 'OK');
+    ok.addEventListener('click', function(){ close(); if (opts.onConfirm) opts.onConfirm(); });
+    row.appendChild(cancel); row.appendChild(ok);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- log-a-night modal ---------- */
+function openAddNight(){
+  var sel = null; // {title, year, tmdbId, posterPath}
+  openModal(function(box, close){
+    box.appendChild(el('h3', null, 'Log a Movie Night'));
+    box.appendChild(el('div','msub','What did the family watch?'));
+
+    var cred = loadTmdbCred();
+    var manualWrap = el('div');
+    var searchWrap = el('div');
+
+    /* --- selected-title preview (shared) --- */
+    var selWrap = el('div');
+    function renderSel(){
+      while (selWrap.firstChild) selWrap.removeChild(selWrap.firstChild);
+      if (!sel) return;
+      var lbl = el('div','f-label','Tonight’s feature');
+      var card = el('div','m-results');
+      var rowBtn = el('div','m-result');
+      var mini = el('div','mini');
+      if (sel.posterPath){
+        var img = document.createElement('img');
+        img.alt = ''; img.src = TMDB_IMG + sel.posterPath;
+        mini.appendChild(img);
+      }
+      var tx = el('div');
+      tx.appendChild(el('div','t', sel.title));
+      tx.appendChild(el('div','y', sel.year ? String(sel.year) : ''));
+      rowBtn.appendChild(mini); rowBtn.appendChild(tx);
+      card.appendChild(rowBtn);
+      selWrap.appendChild(lbl); selWrap.appendChild(card);
+    }
+
+    /* --- TMDB search path --- */
+    if (cred){
+      var sLbl = el('div','f-label','Search');
+      var sInput = el('input','f-input');
+      sInput.type = 'search'; sInput.placeholder = 'Search movies (TMDB)…'; sInput.autocomplete = 'off';
+      var resBox = el('div');
+      var timer = null;
+      sInput.addEventListener('input', function(){
+        clearTimeout(timer);
+        var q = sInput.value.trim();
+        if (q.length < 2){ while (resBox.firstChild) resBox.removeChild(resBox.firstChild); return; }
+        timer = setTimeout(function(){
+          tmdbSearch(q).then(function(d){
+            while (resBox.firstChild) resBox.removeChild(resBox.firstChild);
+            var list = (d.results || []).slice(0, 5);
+            if (!list.length) return;
+            var wrap = el('div','m-results');
+            list.forEach(function(r){
+              var b = el('button','m-result');
+              b.type = 'button';
+              var mini = el('div','mini');
+              if (r.poster_path){
+                var img = document.createElement('img');
+                img.alt = ''; img.loading = 'lazy';
+                img.src = 'https://image.tmdb.org/t/p/w92' + r.poster_path;
+                mini.appendChild(img);
+              }
+              var tx = el('div');
+              tx.appendChild(el('div','t', r.title));
+              tx.appendChild(el('div','y', (r.release_date || '').slice(0,4)));
+              b.appendChild(mini); b.appendChild(tx);
+              b.addEventListener('click', function(){
+                sel = { title: r.title, year: Number((r.release_date||'').slice(0,4)) || null,
+                        tmdbId: r.id, posterPath: r.poster_path || null };
+                while (resBox.firstChild) resBox.removeChild(resBox.firstChild);
+                sInput.value = '';
+                renderSel();
+              });
+              wrap.appendChild(b);
+            });
+            resBox.appendChild(wrap);
+          }).catch(function(){ toast('Search failed — try manual entry'); });
+        }, 350);
+      });
+      searchWrap.appendChild(sLbl);
+      searchWrap.appendChild(sInput);
+      searchWrap.appendChild(resBox);
+      var manualLink = el('button','linky','or type it in manually');
+      manualLink.type = 'button';
+      manualLink.addEventListener('click', function(){
+        searchWrap.style.display = 'none';
+        manualWrap.style.display = 'block';
+      });
+      searchWrap.appendChild(manualLink);
+      manualWrap.style.display = 'none';
+    } else {
+      var note = el('div','m-note',
+        'Tip: posters & search appear automatically once a TMDB key is saved in Screening Room’s settings. Manual entry works fine too.');
+      searchWrap.appendChild(note);
+    }
+
+    /* --- manual path --- */
+    manualWrap.appendChild(el('div','f-label','Movie title'));
+    var tInput = el('input','f-input');
+    tInput.type = 'text'; tInput.placeholder = 'e.g. The Iron Giant';
+    manualWrap.appendChild(tInput);
+    manualWrap.appendChild(el('div','f-label','Year (optional)'));
+    var yInput = el('input','f-input');
+    yInput.type = 'number'; yInput.inputMode = 'numeric'; yInput.placeholder = 'e.g. 1999';
+    manualWrap.appendChild(yInput);
+
+    /* --- date --- */
+    var dateWrap = el('div');
+    dateWrap.appendChild(el('div','f-label','Movie night date'));
+    var dInput = el('input','f-input');
+    dInput.type = 'date'; dInput.value = AZ.today();
+    dateWrap.appendChild(dInput);
+
+    /* --- whose pick --- */
+    var pickWrap = el('div');
+    pickWrap.appendChild(el('div','f-label','Whose pick was it?'));
+    var chips = el('div','pick-chips');
+    var picked = nextPicker().id;
+    MEMBERS.forEach(function(m){
+      var c = el('button','pick-chip', m.name);
+      c.type = 'button';
+      function paint(){
+        if (picked === m.id){ c.classList.add('on'); c.style.background = m.color; }
+        else { c.classList.remove('on'); c.style.background = ''; }
+      }
+      c.addEventListener('click', function(){ picked = m.id; repaintAll(); });
+      c._paint = paint;
+      chips.appendChild(c);
+    });
+    function repaintAll(){
+      var kids = chips.children;
+      for (var i=0;i<kids.length;i++) if (kids[i]._paint) kids[i]._paint();
+    }
+    repaintAll();
+    pickWrap.appendChild(chips);
+
+    /* --- buttons --- */
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-primary','Save the Night');
+    save.addEventListener('click', function(){
+      var title = sel ? sel.title : tInput.value.trim();
+      if (!title){ toast('Give the movie a title first'); return; }
+      var year = sel ? sel.year : (Number(yInput.value) || null);
+      var date = dInput.value || AZ.today();
+      var id = 'night_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+      data.records[id] = {
+        id:id, type:'night', title:title, year:year, date:date, pickedBy:picked,
+        tmdbId: sel ? sel.tmdbId : null, posterPath: sel ? sel.posterPath : null,
+        updatedAt: Date.now()
+      };
+      saveData();
+      close();
+      render();
+      toast(memberById(picked).name + '’s pick is on the bill — everyone add your reviews');
+    });
+    row.appendChild(cancel); row.appendChild(save);
+
+    box.appendChild(searchWrap);
+    box.appendChild(manualWrap);
+    box.appendChild(selWrap);
+    box.appendChild(dateWrap);
+    box.appendChild(pickWrap);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- reaction modal (view + edit in one) ---------- */
+function openReaction(night, member){
+  var existing = reactionFor(night.id, member.id);
+  var stars = existing ? existing.stars : 0;
+  openModal(function(box, close){
+    var h = el('h3', null, member.name + '’s Review');
+    h.style.color = member.color;
+    box.appendChild(h);
+    box.appendChild(el('div','msub', night.title + ' · ' + AZ.pretty(night.date)));
+
+    box.appendChild(el('div','f-label','Star rating'));
+    var sp = el('div','starpick');
+    var starBtns = [];
+    var hint = el('div','starpick-hint','');
+    function paintStars(){
+      starBtns.forEach(function(b, i){
+        b.textContent = (i < stars) ? '★' : '☆';
+        b.className = (i < stars) ? 'on' : '';
+      });
+      hint.textContent = stars ? stars + ' out of 5 stars' : 'Tap the stars';
+    }
+    for (var i=1;i<=5;i++){
+      (function(n){
+        var b = el('button', null, '☆');
+        b.type = 'button';
+        b.setAttribute('aria-label', n + ' star' + (n>1?'s':''));
+        b.addEventListener('click', function(){ stars = n; paintStars(); });
+        starBtns.push(b);
+        sp.appendChild(b);
+      })(i);
+    }
+    paintStars();
+    box.appendChild(sp);
+    box.appendChild(hint);
+
+    box.appendChild(el('div','f-label','What did you think?'));
+    var thought = el('textarea','f-area');
+    thought.placeholder = 'Your two-sentence review…';
+    thought.value = existing ? (existing.thought || '') : '';
+    box.appendChild(thought);
+
+    box.appendChild(el('div','f-label','Favorite quote'));
+    var quote = el('input','f-input');
+    quote.type = 'text';
+    quote.placeholder = 'The line you’ll be repeating all week';
+    quote.value = existing ? (existing.quote || '') : '';
+    box.appendChild(quote);
+
+    box.appendChild(el('div','f-label','Favorite movie night memory'));
+    var memory = el('textarea','f-area');
+    memory.placeholder = 'Not the movie — the night. What happened on the couch?';
+    memory.value = existing ? (existing.memory || '') : '';
+    box.appendChild(memory);
+
+    var row = el('div','modal-buttons');
+    var cancel = el('button','btn-secondary','Cancel');
+    cancel.addEventListener('click', close);
+    var save = el('button','btn-gold', existing ? 'Update' : 'Save Review');
+    save.addEventListener('click', function(){
+      var id = 'rx_' + night.id + '_' + member.id;
+      data.records[id] = {
+        id:id, type:'reaction', nightId:night.id, member:member.id,
+        stars:stars, thought:thought.value.trim(), quote:quote.value.trim(), memory:memory.value.trim(),
+        updatedAt: Date.now()
+      };
+      saveData();
+      close();
+      render();
+      if (stars === 5) confettiBurst();
+      toast(stars ? member.name + ' gave it ' + starString(stars) : 'Saved ' + member.name + '’s review');
+    });
+    row.appendChild(cancel); row.appendChild(save);
+    box.appendChild(row);
+  });
+}
+
+/* ---------- delete a night (tombstone) ---------- */
+function deleteNight(night){
+  confirmModal({
+    title:'Strike this from the record?',
+    message:'"' + night.title + '" (' + AZ.pretty(night.date) + ') and everyone’s reviews will be removed.',
+    confirmText:'Delete night',
+    onConfirm: function(){
+      var now = Date.now();
+      data.records[night.id] = { id:night.id, type:'night', deleted:true, updatedAt:now };
+      MEMBERS.forEach(function(m){
+        var rid = 'rx_' + night.id + '_' + m.id;
+        if (data.records[rid]) data.records[rid] = { id:rid, type:'reaction', deleted:true, updatedAt:now };
+      });
+      saveData();
+      render();
+      toast('Night removed');
+    }
+  });
+}
+
+/* ---------- render ---------- */
+var quoteIndex = 0;
+function render(){
+  var app = document.getElementById('app');
+  while (app.firstChild) app.removeChild(app.firstChild);
+
+  /* header */
+  var header = el('header');
+  header.appendChild(el('div','presents','The Ortiz Family Presents'));
+  header.appendChild(el('h1', null, 'Movie Night'));
+  header.appendChild(el('div','deco','★'));
+  header.appendChild(el('div','now','A Weekly Feature · Est. Fridays'));
+  app.appendChild(header);
+
+  /* now selecting */
+  var np = nextPicker();
+  var tonight = el('div','tonight');
+  tonight.appendChild(el('div','label','Now selecting'));
+  var pn = el('div','pickname', np.name + '’s Pick');
+  pn.style.color = np.color;
+  tonight.appendChild(pn);
+  tonight.appendChild(el('div','showdate','Next showing · ' + AZ.prettyLong(AZ.nextFriday())));
+  var rot = el('div','rotation');
+  MEMBERS.forEach(function(m, i){
+    var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
+    var dot = el('span','dot', m.name.charAt(0));
+    dot.style.background = m.color;
+    chip.appendChild(dot);
+    chip.appendChild(document.createTextNode(m.name));
+    rot.appendChild(chip);
+    if (i < MEMBERS.length - 1) rot.appendChild(el('span','rot-arrow','·'));
+  });
+  tonight.appendChild(rot);
+  app.appendChild(tonight);
+
+  /* quote title-card */
+  var quotes = allQuotes();
+  if (quotes.length){
+    var qw = el('div','quotewall');
+    qw.setAttribute('role','button');
+    qw.setAttribute('tabindex','0');
+    var q = quotes[quoteIndex % quotes.length];
+    qw.appendChild(el('div','qmark','“'));
+    qw.appendChild(el('blockquote', null, q.quote));
+    var attr = el('div','attr');
+    var b = el('b', null, q.member.name);
+    b.style.color = q.member.color;
+    attr.appendChild(document.createTextNode('— '));
+    attr.appendChild(b);
+    attr.appendChild(document.createTextNode(' · ' + q.movie));
+    qw.appendChild(attr);
+    qw.appendChild(el('div','hint','From the quote wall · tap for another'));
+    function nextQuote(){ quoteIndex++; render(); }
+    qw.addEventListener('click', nextQuote);
+    qw.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); nextQuote(); } });
+    app.appendChild(qw);
+  }
+
+  /* log button */
+  var logBtn = el('button','log-btn','Log a Movie Night');
+  logBtn.addEventListener('click', openAddNight);
+  app.appendChild(logBtn);
+
+  /* the archive */
+  var list = nights();
+  app.appendChild(el('div','section-label','The Family Archive'));
+  app.appendChild(el('div','section-sub', list.length ? list.length + ' night' + (list.length===1?'':'s') + ' on the record' : ''));
+  if (!list.length){
+    var es = el('div','empty-state');
+    es.appendChild(el('div','big','Coming Soon'));
+    es.appendChild(el('div', null, 'No features on the record yet.'));
+    es.appendChild(el('div', null, 'Log your first Friday night to open the archive.'));
+    app.appendChild(es);
+  }
+  list.forEach(function(n){
+    var picker = memberById(n.pickedBy);
+    var card = el('article','night');
+
+    var head = el('div','head');
+    var poster = el('div','poster');
+    if (n.posterPath){
+      var img = document.createElement('img');
+      img.alt = ''; img.loading = 'lazy'; img.src = TMDB_IMG + n.posterPath;
+      img.addEventListener('error', function(){
+        img.remove();
+        poster.style.background = n.grad || 'var(--card-2)';
+        poster.appendChild(document.createTextNode(n.title));
+      });
+      poster.appendChild(img);
+    } else {
+      poster.style.background = n.grad || 'linear-gradient(160deg,#3E3526,#1A1712)';
+      poster.appendChild(document.createTextNode(n.title));
+    }
+    head.appendChild(poster);
+
+    var ht = el('div','head-txt');
+    ht.appendChild(el('h3', null, n.title));
+    ht.appendChild(el('div','meta', (n.year ? n.year + ' · ' : '') + AZ.pretty(n.date)));
+    var pill = el('span','pickpill', '★ ' + picker.name + '’s pick');
+    pill.style.color = picker.color;
+    pill.style.borderColor = picker.color;
+    ht.appendChild(pill);
+    var avg = familyAvg(n.id);
+    if (avg !== null) ht.appendChild(el('span','avgbadge', avg.toFixed(1) + ' ★'));
+    if (n.sample) ht.appendChild(el('span','sampletag','sample'));
+    head.appendChild(ht);
+    card.appendChild(head);
+
+    var rows = el('div','rx-rows');
+    MEMBERS.forEach(function(m){
+      var r = reactionFor(n.id, m.id);
+      var row = el('button','rx-row');
+      row.type = 'button';
+      var who = el('span','who', m.name);
+      who.style.color = m.color;
+      row.appendChild(who);
+      if (r && r.stars) row.appendChild(starsNode(r.stars));
+      if (r && (r.thought || r.quote || r.memory)){
+        row.appendChild(el('span','snippet', r.thought || r.quote || r.memory));
+      } else if (!r || !r.stars){
+        row.appendChild(el('span','snippet empty','Tap to add your review'));
+      } else {
+        row.appendChild(el('span','snippet',''));
+      }
+      row.appendChild(el('span','chev','›'));
+      row.addEventListener('click', function(){ openReaction(n, m); });
+      rows.appendChild(row);
+    });
+    card.appendChild(rows);
+
+    var del = el('button','del','✕');
+    del.setAttribute('aria-label','Delete this night');
+    del.addEventListener('click', function(){ deleteNight(n); });
+    card.appendChild(del);
+
+    app.appendChild(card);
+  });
+
+  /* footer */
+  var footer = el('footer');
+  footer.appendChild(el('div', null, 'Movie Night · Ortiz Family · Prototype v0.3 · Classic'));
+  if (hasSample()){
+    var cs = el('button','clear-sample','Clear sample data');
+    cs.addEventListener('click', function(){
+      confirmModal({
+        title:'Clear the sample nights?',
+        message:'The three demo nights and their reviews will be removed so you can start fresh.',
+        confirmText:'Clear them',
+        onConfirm: clearSample
+      });
+    });
+    footer.appendChild(cs);
+  }
+  app.appendChild(footer);
+}
+
+seedSample();
+render();
+</script>
+</body>
+</html>
