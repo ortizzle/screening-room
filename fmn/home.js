@@ -67,6 +67,18 @@ function renderHome(app){
   inner.appendChild(el('div','showdate', booked
     ? AZ.prettyLong(upNext.date)
     : 'Next movie night · ' + AZ.prettyLong(upNext.date)));
+  /* where to find it — right where you look on the way to the couch */
+  if (booked){
+    var wWrap = el('div','screen-watch');
+    inner.appendChild(wWrap);
+    var paintWatch = function(f){
+      while (wWrap.firstChild) wWrap.removeChild(wWrap.firstChild);
+      var wr = watchRow(f);
+      if (wr) wWrap.appendChild(wr);
+    };
+    paintWatch(booked.facts);
+    ensureNightFacts(booked, paintWatch);
+  }
   var rot = el('div','rotation');
   MEMBERS.forEach(function(m, i){
     var chip = el('div','rot-chip' + (m.id === np.id ? ' current' : ''));
@@ -175,9 +187,21 @@ function renderHome(app){
     app.appendChild(qw);
   }
 
+  /* awards season, once it's close enough to matter */
+  renderOrtizzleCountdown(app);
+
   var logBtn = el('button','log-btn','🍿 Log a Movie Night');
   logBtn.addEventListener('click', openAddNight);
   app.appendChild(logBtn);
+
+  /* an open vote sits right under the button — you can't miss it, and it
+     needs no notification permission to reach anybody */
+  if (openVote()) renderVoteBanner(app);
+  else {
+    var voteBtn = el('button','vote-start','🗳 Can’t decide? Put it to a vote');
+    voteBtn.addEventListener('click', openStartVote);
+    app.appendChild(voteBtn);
+  }
 
   /* memory book */
   var list = nights();
@@ -241,6 +265,7 @@ function renderHome(app){
     ticket.appendChild(tnm);
     ht.appendChild(ticket);
     if (n.sample) ht.appendChild(el('span','sampletag','sample'));
+    if (n.question) ht.appendChild(el('div','night-q', '❓ ' + memberById(n.pickedBy).name + ' asks: ' + n.question));
     head.appendChild(ht);
     card.appendChild(head);
 
@@ -297,6 +322,6 @@ function renderHome(app){
   });
 
   var footer = el('footer');
-  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
+  footer.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
   app.appendChild(footer);
 }

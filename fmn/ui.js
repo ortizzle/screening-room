@@ -329,6 +329,28 @@ function openReaction(night, member){
       box.appendChild(why);
     }
 
+    /* the picker's own question — theirs to write, everyone else's to answer */
+    var askBox = null;
+    if (isPicker){
+      box.appendChild(el('div','f-label','❓ Your question for the family'));
+      askBox = el('input','f-input');
+      askBox.type = 'text';
+      askBox.placeholder = 'e.g. Who’s going to cry first?';
+      askBox.value = night.question || '';
+      box.appendChild(askBox);
+      box.appendChild(el('div','set-note','Ask one thing and everybody answers it in their own reaction. It gets its own page in the scrapbook.'));
+    }
+
+    /* ...and everybody's answer to it */
+    var answer = null;
+    if (night.question){
+      box.appendChild(el('div','f-label','❓ ' + night.question));
+      answer = el('textarea','f-area');
+      answer.placeholder = memberById(night.pickedBy).name + ' wants to know…';
+      answer.value = existing ? (existing.answer || '') : '';
+      box.appendChild(answer);
+    }
+
     box.appendChild(el('div','f-label','What did you think?'));
     var thought = el('textarea','f-area');
     thought.placeholder = 'Your two-sentence review…';
@@ -429,8 +451,18 @@ function openReaction(night, member){
         stars:stars, why: (isPicker && why) ? why.value.trim() : (existing ? existing.why || '' : ''),
         thought:thought.value.trim(), character:character.value.trim(), scene:scene.value.trim(),
         quotes:quotes, memories:memories, poll:poll,
+        answer: answer ? answer.value.trim() : (existing ? existing.answer || '' : ''),
         updatedAt: Date.now()
       };
+      // the picker's question lives on the night, not the reaction
+      if (askBox){
+        var q = askBox.value.trim();
+        var nrec = data.records[night.id];
+        if (nrec && !nrec.deleted && (nrec.question || '') !== q){
+          nrec.question = q;
+          nrec.updatedAt = Date.now();
+        }
+      }
       saveData();
       close();
       render();
@@ -520,6 +552,14 @@ function openEditNight(night){
     var hint = el('div','set-note','Moving this to a later date keeps everyone’s turn in order — the rest of the lineup shifts with it.');
     box.appendChild(hint);
 
+    box.appendChild(el('div','f-label','❓ Question for the family'));
+    var qInput = el('input','f-input');
+    qInput.type = 'text';
+    qInput.placeholder = 'e.g. Who’s going to cry first?';
+    qInput.value = night.question || '';
+    box.appendChild(qInput);
+    box.appendChild(el('div','set-note','The picker’s own question — everyone answers it in their reaction.'));
+
     box.appendChild(el('div','f-label','Whose pick?'));
     var chips = el('div','pick-chips');
     var picked = night.pickedBy;
@@ -554,6 +594,7 @@ function openEditNight(night){
       rec.year = Number(yInput.value) || null;
       rec.date = dInput.value || rec.date;
       rec.pickedBy = picked;
+      rec.question = qInput.value.trim();
       rec.updatedAt = Date.now();
       saveData();
       close();

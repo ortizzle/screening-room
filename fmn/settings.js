@@ -353,6 +353,28 @@ function renderSettings(app){
     });
   }
 
+  /* The Ortizzle */
+  var oz = collapsible(app, '🏆 The Ortizzle', { badge: String(ortizzleYear()) });
+  oz.appendChild(el('div','set-note','Our year-end awards, for achievement in entertaining the Ortiz family in the motion picture sciences. Most winners come straight from the year’s ratings and polls; three are put to the family on the night.'));
+  oz.appendChild(el('div','f-label','Ceremony night'));
+  var ozDate = el('input','f-input');
+  ozDate.type = 'date';
+  ozDate.value = ortizzleDate();
+  ozDate.addEventListener('change', function(){
+    if (!ozDate.value) return;
+    setOrtizzleDate(ozDate.value);
+    render();
+    toast('The Ortizzle is set for ' + AZ.prettyLong(ozDate.value) + ' 🏆');
+  });
+  oz.appendChild(ozDate);
+  var away = daysToOrtizzle();
+  oz.appendChild(el('div','set-note', away > 0
+    ? away + ' days to go. A countdown appears on the Nights tab once it’s within four months.'
+    : away === 0 ? 'That’s tonight. 🎉' : 'That date has passed — pick next year’s.'));
+  var ozOpen = el('button','set-btn','🏆 Open the ' + ortizzleYear() + ' Ortizzle');
+  ozOpen.addEventListener('click', function(){ openOrtizzle(ortizzleYear()); });
+  oz.appendChild(ozOpen);
+
   /* marked-as-watched — undo lives here too */
   var seenList = seenTitles();
   if (seenList.length){
@@ -625,7 +647,7 @@ function renderSettings(app){
   }
 
   var foot = el('footer');
-  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v2.6'));
+  foot.appendChild(el('div', null, 'Family Movie Night · Ortiz Family · v3.0'));
   app.appendChild(foot);
 }
 

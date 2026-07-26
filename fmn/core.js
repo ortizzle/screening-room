@@ -212,7 +212,7 @@ function tmdbSearch(query){
 function tmdbDetails(tmdbId){
   var cred = loadTmdbCred();
   if (!cred || !tmdbId) return Promise.reject(new Error('NO_KEY'));
-  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates';
+  var url = 'https://api.themoviedb.org/3/movie/' + tmdbId + '?append_to_response=release_dates,watch/providers';
   var headers = {};
   if (cred.type === 'v4') headers['Authorization'] = 'Bearer ' + cred.value;
   else url += '&api_key=' + encodeURIComponent(cred.value);
@@ -220,6 +220,27 @@ function tmdbDetails(tmdbId){
     if (!res.ok) throw new Error('TMDB ' + res.status);
     return res.json();
   });
+}
+/* Where the family can actually watch it tonight. TMDB relays JustWatch
+   data; we only want US, and only the names — logos would mean more
+   requests and more layout. Streaming is what matters, so rent/buy is a
+   fallback, not a headline. */
+function usWatchFrom(details){
+  try {
+    var wp = details['watch/providers'];
+    var us = wp && wp.results && wp.results.US;
+    if (!us) return null;
+    function names(list){
+      return (list || []).map(function(p){ return p.provider_name; }).slice(0, 4);
+    }
+    var out = {
+      link: us.link || null,
+      stream: names(us.flatrate),
+      rent: names(us.rent).concat(names(us.buy)).slice(0, 3)
+    };
+    if (!out.stream.length && !out.rent.length) return null;
+    return out;
+  } catch(e){ return null; }
 }
 function usCertFrom(details){
   try {
@@ -268,6 +289,7 @@ function buildFacts(tmdbId, fallbackTitle){
         runtime: d.runtime || null,
         tmdbScore: d.vote_average || null,
         imdbId: d.imdb_id || null,
+        watch: usWatchFrom(d),
         fetchedAt: Date.now()
       };
       return omdbScores(f.imdbId).then(function(sc){
@@ -288,6 +310,29 @@ function imdbGuideChip(f, cls){
   a.rel = 'noopener noreferrer';
   a.setAttribute('aria-label', 'IMDb parents guide for this film');
   return a;
+}
+/* the "where can we watch it" row */
+function watchRow(f){
+  if (!f || !f.watch) return null;
+  var w = f.watch;
+  var wrap = el('div','watch-row');
+  var lead = el('div','wr-lead', w.stream.length ? '📺 Streaming on' : '💵 Rent or buy');
+  wrap.appendChild(lead);
+  var pills = el('div','wr-pills');
+  var list = w.stream.length ? w.stream : w.rent;
+  list.forEach(function(name){ pills.appendChild(el('span','wr-pill', name)); });
+  if (w.stream.length && w.rent.length){
+    pills.appendChild(el('span','wr-pill muted', 'or rent: ' + w.rent[0]));
+  }
+  wrap.appendChild(pills);
+  if (w.link){
+    var a = el('a','wr-link','Where to watch ↗');
+    a.href = w.link;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    wrap.appendChild(a);
+  }
+  return wrap;
 }
 function factChips(f, cls){
   var wrap = el('div', cls || 'idea-facts');

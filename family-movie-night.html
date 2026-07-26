@@ -283,6 +283,147 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .log-btn:active{transform:scale(.98)}
 
+/* ---- The Ortizzle ---- */
+.ortiz-card{
+  display:flex;align-items:center;gap:12px;width:100%;margin-top:16px;
+  padding:14px 15px;border-radius:18px;text-align:left;min-height:64px;
+  background:linear-gradient(135deg,rgba(255,180,84,.2),rgba(242,112,95,.15));
+  border:2px solid var(--amber);color:var(--ink);
+}
+.ortiz-card .oc-ico{font-size:27px}
+.ortiz-card .oc-body{flex:1;min-width:0}
+.ortiz-card .oc-name{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--amber)}
+.ortiz-card .oc-sub{font-size:12.5px;font-weight:800;color:var(--dim);margin-top:2px}
+.ortiz-card .oc-go{font-size:21px;font-weight:900;color:var(--amber)}
+/* the ceremony page rides on the keepsake sheet, so inks are fixed */
+.scrap-page.ortizzle .oz-title{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;line-height:1;
+  text-align:center;color:#8A6A2E;letter-spacing:-.5px;margin-top:4px;
+}
+.scrap-page.ortizzle .oz-sub{
+  text-align:center;font-size:12px;font-weight:700;font-style:italic;
+  color:#6B5A46;line-height:1.45;margin:8px 14px 0;
+}
+.scrap-page.ortizzle .oz-count{
+  text-align:center;font-size:10.5px;font-weight:900;letter-spacing:1.4px;
+  text-transform:uppercase;color:#8A7A66;margin-top:14px;
+}
+.scrap-page.ortizzle .oz-empty{
+  margin-top:22px;text-align:center;font-size:14px;font-weight:700;
+  color:#6B5A46;line-height:1.6;font-style:italic;
+}
+.scrap-page.ortizzle .oz-divider{
+  margin:26px 0 4px;text-align:center;font-size:11px;font-weight:900;
+  letter-spacing:2.5px;text-transform:uppercase;color:#8A6A2E;
+}
+.oz-award{
+  margin-top:16px;padding:14px 15px;border-radius:5px;background:#FFFDF6;
+  border-left:5px solid #C9A227;box-shadow:0 5px 14px rgba(74,53,32,.16);
+}
+.oz-award .oz-top{display:flex;align-items:center;gap:9px}
+.oz-award .oz-ico{font-size:19px}
+.oz-award .oz-name{
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15.5px;
+  color:#4A3520;line-height:1.2;
+}
+.oz-award .oz-blurb{font-size:11.5px;font-weight:700;color:#8A7A66;margin-top:3px;line-height:1.4}
+.oz-award .oz-winner{
+  font-family:'Caveat',cursive;font-size:27px;line-height:1.15;color:#231A14;margin-top:9px;
+}
+.oz-award .oz-detail{font-size:12px;font-weight:800;color:#8A6A2E;margin-top:4px}
+.oz-noms{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.oz-nom{
+  display:block;width:100%;text-align:left;min-height:48px;padding:9px 11px;
+  border-radius:9px;border:2px solid #E4D8C2;background:#FFF;color:#4A3520;
+}
+.oz-nom.on{border-color:#C9A227;background:#FFF8E4}
+.oz-nom .on-text{display:block;font-size:13.5px;font-weight:700;font-style:italic;line-height:1.35}
+.oz-nom .on-by{display:block;font-size:10.5px;font-weight:900;margin-top:4px;
+  text-transform:uppercase;letter-spacing:.5px}
+
+/* ---- where can we watch it ---- */
+.watch-wrap:empty{display:none}
+.watch-row{
+  margin-top:12px;padding:10px 12px;border-radius:12px;
+  background:var(--card-2);border:2px solid var(--line);
+}
+.watch-row .wr-lead{
+  font-size:10.5px;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);
+}
+.watch-row .wr-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.watch-row .wr-pill{
+  font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;
+  background:rgba(143,184,222,.18);color:var(--ink);border:1.5px solid var(--line);
+}
+.watch-row .wr-pill.muted{background:transparent;color:var(--muted);font-weight:700}
+.watch-row .wr-link{
+  display:inline-block;margin-top:8px;font-size:12px;font-weight:900;
+  color:var(--amber);text-decoration:none;min-height:24px;
+}
+/* on the projector screen the surface is always light, so use fixed inks */
+.screen-watch:empty{display:none}
+.screen-watch .watch-row{
+  background:rgba(35,26,20,.05);border-color:rgba(35,26,20,.18);
+  text-align:left;margin-top:14px;
+}
+.screen-watch .wr-lead{color:#6B5A46}
+.screen-watch .wr-pill{background:#FFF;color:#231A14;border-color:rgba(35,26,20,.2)}
+.screen-watch .wr-pill.muted{background:transparent;color:#6B5A46}
+.screen-watch .wr-link{color:#A8620F}
+
+/* ---- put it to a vote ---- */
+.vote-start{
+  display:block;width:100%;margin-top:11px;border:2px dashed var(--line);
+  border-radius:99px;background:transparent;padding:14px;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;
+  color:var(--dim);min-height:50px;
+}
+.vote-start:active{border-color:var(--amber);color:var(--amber)}
+.vote-card{
+  margin-top:14px;background:var(--card);border:2px solid var(--amber);
+  border-radius:20px;padding:15px 14px 14px;box-shadow:0 10px 28px rgba(0,0,0,.2);
+}
+.vote-head{display:flex;align-items:center;gap:9px}
+.vote-head .vc-ico{font-size:22px}
+.vote-head .vc-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;color:var(--amber)}
+.vote-sub{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.6px;margin:4px 0 10px}
+.vote-opt{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
+  margin-top:8px;padding:9px 12px;border-radius:14px;text-align:left;
+  border:2px solid var(--line);background:var(--card-2);color:var(--ink);
+}
+.vote-opt.mine{border-color:var(--amber);background:rgba(255,180,84,.12)}
+.vote-opt .vo-main{flex:1;min-width:0}
+.vote-opt .vo-title{font-weight:800;font-size:14.5px;line-height:1.3}
+.vote-opt .vo-voters{display:flex;align-items:center;gap:4px;margin-top:5px;min-height:18px}
+.vote-opt .vo-dot{
+  width:18px;height:18px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:9.5px;font-weight:900;color:#2A1B14;
+}
+.vote-opt .vo-none{font-size:10.5px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px}
+.vote-opt .vo-count{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:21px;
+  color:var(--amber);flex-shrink:0;min-width:22px;text-align:center}
+.vote-close{
+  display:block;width:100%;margin-top:12px;border:none;border-radius:99px;
+  background:var(--btn-bg);color:var(--btn-ink);padding:14px;min-height:50px;
+  font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;
+}
+.vote-foot{margin-top:11px;font-size:12px;font-weight:700;color:var(--dim);
+  text-align:center;line-height:1.4}
+.vote-picklist{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.vote-pick{
+  display:flex;align-items:center;gap:10px;width:100%;min-height:50px;
+  padding:11px 13px;border-radius:13px;text-align:left;
+  border:2px solid var(--line);background:var(--card-2);color:var(--ink);
+  font-weight:800;font-size:14px;
+}
+.vote-pick.on{border-color:var(--amber);background:rgba(255,180,84,.13)}
+.vote-pick .vp-title{flex:1;min-width:0}
+.vote-pick .vp-mark{color:var(--amber);font-weight:900;font-size:17px;flex-shrink:0}
+
 /* filmstrip divider */
 .film-divider{
   height:22px;margin:32px auto 0;max-width:300px;border-radius:5px;background-color:#17101A;
@@ -342,7 +483,7 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
 }
 .night .del{
   background:none;border:none;color:var(--muted);font-size:18px;padding:8px 10px;
-  position:absolute;top:4px;right:4px;min-width:40px;min-height:40px;z-index:2;
+  position:absolute;top:4px;right:4px;min-width:44px;min-height:44px;z-index:2;
   letter-spacing:1px;line-height:1;
 }
 .night .del:active{color:var(--amber)}
@@ -546,6 +687,15 @@ html.motion-on .dust{animation:dustdrift 5s steps(3) infinite}
   color:#4A3520;font-style:italic;
 }
 .sp-char-line{margin-top:10px;font-family:'Caveat',cursive;font-size:21px;color:#4A3520;line-height:1.3}
+/* the picker's question, written across the scrapbook page in their hand */
+.night-q{
+  margin-top:8px;font-size:12.5px;font-weight:800;line-height:1.4;
+  color:var(--amber);font-style:italic;
+}
+.sp-asked{
+  font-family:'Caveat',cursive;font-size:25px;line-height:1.25;color:#4A3520;
+  text-align:center;padding:6px 10px 2px;
+}
 /* comic speech-bubble quotes on the scrapbook page */
 .sp-comic-wrap{margin-top:16px}
 .sp-comic{
@@ -1105,15 +1255,17 @@ footer{
 <div class="toast" id="toast"></div>
 
 <!-- One shared global scope, loaded in order. boot.js must stay last. -->
-<script src="fmn/core.js"></script>
-<script src="fmn/data.js"></script>
-<script src="fmn/ui.js"></script>
-<script src="fmn/keepsakes.js"></script>
-<script src="fmn/games.js"></script>
-<script src="fmn/home.js"></script>
-<script src="fmn/ideas.js"></script>
-<script src="fmn/stats.js"></script>
-<script src="fmn/settings.js"></script>
-<script src="fmn/boot.js"></script>
+<script src="fmn/core.js?v=30"></script>
+<script src="fmn/data.js?v=30"></script>
+<script src="fmn/ui.js?v=30"></script>
+<script src="fmn/keepsakes.js?v=30"></script>
+<script src="fmn/games.js?v=30"></script>
+<script src="fmn/home.js?v=30"></script>
+<script src="fmn/ideas.js?v=30"></script>
+<script src="fmn/vote.js?v=30"></script>
+<script src="fmn/awards.js?v=30"></script>
+<script src="fmn/stats.js?v=30"></script>
+<script src="fmn/settings.js?v=30"></script>
+<script src="fmn/boot.js?v=30"></script>
 </body>
 </html>

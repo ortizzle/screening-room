@@ -69,6 +69,28 @@ function buildNightKeepsake(container, night){
     container.appendChild(thoSec);
   }
 
+  /* the picker's own question, and what everyone said back */
+  if (night.question){
+    var ansMembers = MEMBERS.filter(function(m){
+      var r = reactionFor(night.id, m.id);
+      return r && r.answer;
+    });
+    if (ansMembers.length){
+      var qaSec = spSection('❓ ' + memberById(night.pickedBy).name + ' asked');
+      var asked = el('div','sp-asked', night.question);
+      qaSec.appendChild(asked);
+      ansMembers.forEach(function(m, i){
+        var r = reactionFor(night.id, m.id);
+        var note = el('div','sp-note');
+        note.appendChild(spTag(m));
+        note.appendChild(document.createTextNode(' ' + r.answer));
+        note.style.transform = 'rotate(' + (rots[(i+1) % 4] * 0.5) + 'deg)';
+        qaSec.appendChild(note);
+      });
+      container.appendChild(qaSec);
+    }
+  }
+
   /* favorite characters */
   var chars = MEMBERS.filter(function(m){
     var r = reactionFor(night.id, m.id);

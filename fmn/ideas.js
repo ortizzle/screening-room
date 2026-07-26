@@ -483,8 +483,12 @@ function openIdeaDetail(it){
     hero.appendChild(poster);
     var side = el('div','side');
     var facts = el('div','idea-facts');
+    var watchWrap = el('div','watch-wrap');
     function paintIdeaFacts(f){
       while (facts.firstChild) facts.removeChild(facts.firstChild);
+      while (watchWrap.firstChild) watchWrap.removeChild(watchWrap.firstChild);
+      var wr = watchRow(f);
+      if (wr) watchWrap.appendChild(wr);
       var cert = (f && f.cert) || it.cert;
       if (cert) facts.appendChild(el('span','idea-fact cert', cert));
       var rel = (f && f.released) || null;
@@ -508,6 +512,8 @@ function openIdeaDetail(it){
     if (it.why) side.appendChild(el('div','idea-why', '“' + it.why + '”'));
     hero.appendChild(side);
     box.appendChild(hero);
+
+    box.appendChild(watchWrap);
 
     box.appendChild(el('div','f-label','What it’s about'));
     box.appendChild(el('div','idea-syn', it.overview || 'No synopsis available for this one yet — but the title alone might be enough.'));
