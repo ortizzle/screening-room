@@ -189,6 +189,18 @@ a.chip:hover{filter:brightness(1.2)}
 .seg .sort-chip:last-child{border-radius:0 99px 99px 0;margin-right:0}
 .seg .sort-chip.active{position:relative;z-index:1}
 .sort-chip.tagf{border-color:rgba(217,164,65,.32);color:#C79A4F}
+
+/* just-landed rail: green marks "you can watch this now", same as the badge */
+.arrivals-label{color:var(--green)}
+.cw-card.arrival{
+  border-color:rgba(123,175,140,.45);
+  background:linear-gradient(160deg,rgba(123,175,140,.10),transparent 62%),var(--card);
+}
+.arrival-line{font-size:12px;color:var(--green);margin-top:3px;font-weight:700;letter-spacing:.5px}
+
+/* settings → backup & sync */
+.sync-status{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:6px 0 12px}
+.sync-status b{color:var(--cream);font-size:14px}
 .sort-chip.tagf:hover{border-color:var(--gold)}
 .sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
 
@@ -466,7 +478,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.2 · True Theatrical';
+var APP_VERSION = 'v2.3 · Backup & Arrivals';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -564,8 +576,17 @@ function loadLib(){
     return Array.isArray(v) ? v : [];
   }catch(e){ return []; }
 }
-function saveLib(){
+function persistLib(){
   try{ localStorage.setItem(LIB_STORE, JSON.stringify(lib)); }catch(e){}
+}
+/* pass the entry that changed so its updatedAt stamps — that timestamp is what
+   the sync merge uses to decide which device's copy of a title wins. Background
+   metadata refreshes deliberately call saveLib() with no entry: re-fetchable
+   cache shouldn't churn the sync or outrank a real edit made elsewhere. */
+function saveLib(entry){
+  if(entry) entry.updatedAt = Date.now();
+  persistLib();
+  scheduleSync();
 }
 function loadMeta(){
   try{
@@ -588,6 +609,198 @@ function findEntry(type, id){
   return null;
 }
 
+/* ========================================================= */
+/* BACKUP & SYNC (private GitHub Gist)                       */
+/* ========================================================= */
+/* Rules that keep this safe (learned the hard way elsewhere):
+   - every title carries updatedAt; on merge the newest edit wins
+   - deletes leave a tombstone so a stale device can't resurrect them
+   - a save always pulls + merges before writing, never blind-overwrites
+   - tombstones older than 60 days are purged during merge                */
+var GIST_TOKEN_STORE = 'sr_gist_token';
+var GIST_ID_STORE    = 'sr_gist_id';
+var TOMB_STORE       = 'sr_tombs_v1';
+var SYNCED_AT_STORE  = 'sr_synced_at';
+var GIST_FILE        = 'screening-room-data.json';
+var TOMB_TTL         = 60 * 864e5;
+var SYNC_DEBOUNCE    = 8000;
+
+var gistToken = null, gistId = null, syncedAt = 0;
+var tombs = {}, syncing = false, syncTimer = null;
+
+function loadTombs(){
+  try{
+    var v = JSON.parse(localStorage.getItem(TOMB_STORE) || '{}');
+    return (v && typeof v === 'object') ? v : {};
+  }catch(e){ return {}; }
+}
+function saveTombs(){ try{ localStorage.setItem(TOMB_STORE, JSON.stringify(tombs)); }catch(e){} }
+function tombstone(entry){
+  tombs[entryKey(entry.type, entry.id)] = Date.now();
+  saveTombs();
+}
+function untombstone(entry){
+  var k = entryKey(entry.type, entry.id);
+  if(tombs[k]){ delete tombs[k]; saveTombs(); }
+}
+
+/* titles saved before sync existed get a timestamp from what we already know */
+function backfillStamps(){
+  var changed = false;
+  lib.forEach(function(e){
+    if(!e.updatedAt){
+      e.updatedAt = e.finishedAt || e.lastWatchedAt || e.addedAt || 1;
+      changed = true;
+    }
+  });
+  if(changed) persistLib();
+}
+
+function syncConnected(){ return !!gistToken; }
+function loadSyncCreds(){
+  try{
+    gistToken = localStorage.getItem(GIST_TOKEN_STORE) || null;
+    gistId    = localStorage.getItem(GIST_ID_STORE) || null;
+    syncedAt  = parseInt(localStorage.getItem(SYNCED_AT_STORE) || '0', 10) || 0;
+  }catch(e){}
+}
+function saveSyncCreds(){
+  try{
+    if(gistToken) localStorage.setItem(GIST_TOKEN_STORE, gistToken); else localStorage.removeItem(GIST_TOKEN_STORE);
+    if(gistId) localStorage.setItem(GIST_ID_STORE, gistId); else localStorage.removeItem(GIST_ID_STORE);
+    return true;
+  }catch(e){ return false; }
+}
+function clearSync(){
+  gistToken = null; gistId = null; syncedAt = 0;
+  try{
+    localStorage.removeItem(GIST_TOKEN_STORE);
+    localStorage.removeItem(GIST_ID_STORE);
+    localStorage.removeItem(SYNCED_AT_STORE);
+  }catch(e){}
+}
+
+function gh(path, opts){
+  opts = opts || {};
+  var headers = {
+    'Authorization': 'Bearer ' + gistToken,
+    'Accept': 'application/vnd.github+json'
+  };
+  if(opts.body) headers['Content-Type'] = 'application/json';
+  return fetch('https://api.github.com' + path, {
+    method: opts.method || 'GET', headers: headers, body: opts.body || undefined
+  }).then(function(r){
+    if(!r.ok){ var err = new Error('GH_' + r.status); err.status = r.status; throw err; }
+    return r.json();
+  });
+}
+function syncErrMessage(e){
+  var s = e && e.status;
+  if(s === 401) return 'GitHub rejected that token. Create a new one with “gist” access.';
+  if(s === 403) return 'GitHub refused (rate limited, or the token lacks “gist” access).';
+  if(s === 404) return 'That backup gist is gone. Clear the token in Settings and reconnect.';
+  return 'Could not reach GitHub. Your library is safe on this device.';
+}
+
+function pullRemote(){
+  if(!gistId) return Promise.resolve(null);
+  return gh('/gists/' + gistId).then(function(g){
+    var f = g.files && g.files[GIST_FILE];
+    if(!f) return null;
+    var text = f.truncated && f.raw_url
+      ? fetch(f.raw_url).then(function(r){ return r.text(); })
+      : Promise.resolve(f.content);
+    return Promise.resolve(text).then(function(t){
+      try{ return JSON.parse(t || 'null'); }catch(e){ return null; }
+    });
+  });
+}
+
+/* newest edit per title wins; a tombstone beats any older copy of that title */
+function applyMerge(remote){
+  if(!remote) return;
+  var rLib = Array.isArray(remote.lib) ? remote.lib : [];
+  var rTombs = (remote.tombs && typeof remote.tombs === 'object') ? remote.tombs : {};
+
+  Object.keys(rTombs).forEach(function(k){
+    if(!tombs[k] || rTombs[k] > tombs[k]) tombs[k] = rTombs[k];
+  });
+
+  var byKey = {};
+  rLib.forEach(function(e){
+    if(e && (e.type === 'movie' || e.type === 'tv') && e.id != null) byKey[entryKey(e.type, e.id)] = e;
+  });
+  lib.forEach(function(e){
+    var k = entryKey(e.type, e.id), other = byKey[k];
+    if(!other || (e.updatedAt || 0) >= (other.updatedAt || 0)) byKey[k] = e; // ties stay local
+  });
+
+  var out = [];
+  Object.keys(byKey).forEach(function(k){
+    var e = byKey[k];
+    if((tombs[k] || 0) >= (e.updatedAt || 0)) return; // removed after its last edit
+    out.push(e);
+  });
+
+  var cutoff = Date.now() - TOMB_TTL;
+  Object.keys(tombs).forEach(function(k){ if(tombs[k] < cutoff) delete tombs[k]; });
+
+  lib = out;
+  saveTombs();
+  persistLib(); // never saveLib() here — that would re-arm the sync timer forever
+}
+
+function pushRemote(){
+  var payload = JSON.stringify({ v: 2, lib: lib, tombs: tombs, savedAt: Date.now() }, null, 2);
+  var files = {}; files[GIST_FILE] = { content: payload };
+  if(gistId){
+    return gh('/gists/' + gistId, { method: 'PATCH', body: JSON.stringify({ files: files }) });
+  }
+  return gh('/gists', {
+    method: 'POST',
+    body: JSON.stringify({ description: 'Screening Room — library backup', public: false, files: files })
+  }).then(function(g){
+    gistId = g.id; saveSyncCreds();
+    return g;
+  });
+}
+
+function syncNow(silent){
+  if(!syncConnected() || syncing) return Promise.resolve(false);
+  syncing = true;
+  if(syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
+  return pullRemote()
+    .then(function(remote){ applyMerge(remote); return pushRemote(); })
+    .then(function(){
+      syncedAt = Date.now();
+      try{ localStorage.setItem(SYNCED_AT_STORE, String(syncedAt)); }catch(e){}
+      syncing = false;
+      if(!silent) notice('Backed up ' + lib.length + ' title' + (lib.length===1?'':'s') + ' to GitHub.');
+      safeRerender();
+      return true;
+    })
+    .catch(function(e){
+      syncing = false;
+      if(!silent) notice(syncErrMessage(e));
+      return false;
+    });
+}
+function scheduleSync(){
+  if(!syncConnected() || syncing) return;
+  if(syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(function(){ syncTimer = null; syncNow(true); }, SYNC_DEBOUNCE);
+}
+function syncedAgoLabel(){
+  if(!syncedAt) return 'Not backed up yet';
+  var mins = Math.floor((Date.now() - syncedAt) / 60000);
+  if(mins < 1) return 'Backed up just now';
+  if(mins < 60) return 'Backed up ' + mins + ' min ago';
+  var hrs = Math.floor(mins / 60);
+  if(hrs < 24) return 'Backed up ' + hrs + ' hour' + (hrs===1?'':'s') + ' ago';
+  var days = Math.floor(hrs / 24);
+  return 'Backed up ' + days + ' day' + (days===1?'':'s') + ' ago';
+}
+
 /* ---------- tags ---------- */
 function entryHasTag(entry, tag){ return (entry.tags||[]).indexOf(tag) !== -1; }
 function allKnownTags(){
@@ -602,13 +815,13 @@ function toggleTag(entry, tag){
   entry.tags = entry.tags || [];
   var idx = entry.tags.indexOf(tag);
   if(idx===-1) entry.tags.push(tag); else entry.tags.splice(idx,1);
-  saveLib();
+  saveLib(entry);
 }
 function addCustomTag(entry, raw){
   var t = (raw||'').trim().slice(0,30);
   if(!t) return false;
   entry.tags = entry.tags || [];
-  if(entry.tags.indexOf(t)===-1){ entry.tags.push(t); saveLib(); }
+  if(entry.tags.indexOf(t)===-1){ entry.tags.push(t); saveLib(entry); }
   return true;
 }
 
@@ -818,10 +1031,110 @@ function renderSetup(isSettings){
       oRow.appendChild(oClear);
       box.appendChild(oRow);
     }
+
+    renderSyncSettings(box);
   }
 
   app.appendChild(box);
   app.appendChild(footer());
+}
+
+/* ---------- Settings → Backup & Sync ---------- */
+function renderSyncSettings(box){
+  box.appendChild(el('div','divider'));
+  box.appendChild(el('div','section-label','Backup & Sync'));
+
+  var blurb = el('p');
+  blurb.appendChild(document.createTextNode('Keep a copy of your library in a private GitHub gist, so it survives a lost phone — and so the same library follows you to another device. Create a '));
+  var tl = el('a', null, 'token with gist access');
+  tl.href = 'https://github.com/settings/tokens/new?scopes=gist&description=Screening%20Room';
+  tl.target = '_blank'; tl.rel = 'noopener'; tl.style.color = 'var(--gold)';
+  blurb.appendChild(tl);
+  blurb.appendChild(document.createTextNode(', paste it below, and the app handles the rest. The token stays in this browser only.'));
+  box.appendChild(blurb);
+
+  var sMsg = el('div','msg');
+  function sShow(cls, text){ sMsg.className = 'msg ' + cls; sMsg.textContent = text; }
+
+  if(!syncConnected()){
+    var sField = el('div','field');
+    var sInput = el('input');
+    sInput.type = 'password';
+    sInput.placeholder = 'Paste GitHub token (gist access)';
+    sInput.autocomplete = 'off'; sInput.spellcheck = false;
+    sField.appendChild(sInput);
+    var sSave = el('button','primary-btn','Connect');
+    sField.appendChild(sSave);
+    box.appendChild(sField);
+    box.appendChild(sMsg);
+
+    on(sSave, 'click', function(){
+      var t = sInput.value.trim();
+      if(!t){ sShow('err','Paste your GitHub token first.'); return; }
+      sSave.disabled = true;
+      sShow('ok','Checking the token…');
+      gistToken = t; gistId = null;
+      gh('/gists?per_page=1').then(function(){
+        if(!saveSyncCreds()) throw new Error('STORE');
+        sShow('ok','Connected. Backing up your library…');
+        return syncNow(true);
+      }).then(function(ok){
+        if(!ok) throw new Error('SYNC');
+        notice('Backup connected — ' + lib.length + ' title' + (lib.length===1?'':'s') + ' saved.');
+        renderSetup(true);
+      }).catch(function(e){
+        var wasStore = e && e.message === 'STORE';
+        gistToken = null; gistId = null;
+        sSave.disabled = false;
+        sShow('err', wasStore ? 'Could not write to localStorage (private mode?).' : syncErrMessage(e));
+      });
+    });
+    on(sInput, 'keydown', function(e){ if(e.key === 'Enter') sSave.click(); });
+    return;
+  }
+
+  var status = el('div','sync-status');
+  status.appendChild(el('b', null, syncedAgoLabel()));
+  status.appendChild(el('div','sub2', lib.length + ' title' + (lib.length===1?'':'s') + ' in this library'
+    + (gistId ? ' · gist ' + gistId.slice(0,8) : '')));
+  box.appendChild(status);
+  box.appendChild(sMsg);
+
+  var sRow = el('div','row');
+
+  var nowBtn = el('button','primary-btn','↑ Back up now');
+  on(nowBtn, 'click', function(){
+    nowBtn.disabled = true; nowBtn.textContent = 'Syncing…';
+    syncNow(false).then(function(ok){
+      nowBtn.disabled = false; nowBtn.textContent = '↑ Back up now';
+      if(ok) renderSetup(true);
+    });
+  });
+  sRow.appendChild(nowBtn);
+
+  if(gistId){
+    var view = el('a','ghost-btn','View backup ↗');
+    view.href = 'https://gist.github.com/' + gistId;
+    view.target = '_blank'; view.rel = 'noopener';
+    sRow.appendChild(view);
+  }
+
+  var dis = el('button','ghost-btn','Disconnect');
+  dis.dataset.armed = '';
+  on(dis, 'click', function(){
+    if(dis.dataset.armed !== '1'){
+      dis.dataset.armed = '1';
+      dis.textContent = 'Tap again to disconnect';
+      dis.classList.add('mini-btn','danger');
+      return;
+    }
+    clearSync();
+    notice('Disconnected. The gist itself was left untouched.');
+    renderSetup(true);
+  });
+  sRow.appendChild(dis);
+
+  box.appendChild(sRow);
 }
 
 function doExport(){
@@ -840,12 +1153,18 @@ function doImport(file){
   reader.onload = function(){
     try{
       var data = JSON.parse(reader.result);
-      if(!Array.isArray(data)) throw new Error('shape');
-      var valid = data.filter(function(e){
+      // accept a plain export array or a gist-format {v,lib,tombs} backup
+      var arr = Array.isArray(data) ? data : (data && Array.isArray(data.lib) ? data.lib : null);
+      if(!arr) throw new Error('shape');
+      var valid = arr.filter(function(e){
         return e && typeof e === 'object' && e.id != null &&
                (e.type === 'movie' || e.type === 'tv') && typeof e.title === 'string';
       });
       if(!valid.length) throw new Error('shape');
+      // a restore is the freshest truth: stamp it so it outranks any remote
+      // copy, and lift tombstones for the titles it brings back
+      var now = Date.now();
+      valid.forEach(function(e){ e.updatedAt = now; untombstone(e); });
       lib = valid;
       saveLib();
       notice('Imported ' + lib.length + ' titles.');
@@ -1091,7 +1410,8 @@ function addTitle(base, status, panel, input, tags){
     addedAt: Date.now(), finishedAt: status==='finished' ? Date.now() : null
   };
   lib.push(entry);
-  saveLib();
+  untombstone(entry); // re-adding something previously removed must stick
+  saveLib(entry);
   if(panel) clear(panel);
   if(input) input.value = '';
 
@@ -1298,6 +1618,7 @@ function rerender(){
   if(state.view === 'detail'){
     renderDetail();
   }else{
+    renderNewArrivals();
     renderContinueWatching();
     renderTabs();
     renderPane();
@@ -1310,6 +1631,50 @@ function rerender(){
     }
   }
   app.appendChild(footer());
+}
+
+/* A title you were waiting on just hit a service — surface it up top for a
+   week instead of hoping you scroll past its card. */
+var ARRIVAL_DAYS = 7;
+function newArrivals(){
+  var now = Date.now();
+  return lib.filter(function(e){
+    if(e.status !== 'wishlist' || !e.streamNewAt) return false;
+    if((now - e.streamNewAt) >= ARRIVAL_DAYS * 864e5) return false;
+    var s = (e.providers && e.providers.stream) || [];
+    return s.length > 0;
+  }).sort(function(a,b){ return b.streamNewAt - a.streamNewAt; });
+}
+function landedLabel(ts){
+  var days = Math.floor((Date.now() - ts) / 864e5);
+  if(days <= 0) return 'Landed today';
+  if(days === 1) return 'Landed yesterday';
+  return 'Landed ' + days + ' days ago';
+}
+function renderNewArrivals(){
+  var items = newArrivals();
+  if(!items.length) return;
+  app.appendChild(el('div','section-label arrivals-label','Just Landed'));
+  var row = el('div','cw-row');
+  items.forEach(function(entry){
+    var card = el('div','cw-card arrival');
+    var pm = el('div','poster-mini'); posterStyle(pm, entry.posterPath, entry.title); card.appendChild(pm);
+    var mid = el('div'); mid.style.minWidth='0';
+    mid.appendChild(el('h3', null, entry.title));
+    mid.appendChild(el('div','arrival-line', 'NOW ON ' + entry.providers.stream[0].toUpperCase()));
+    mid.appendChild(el('div','ep-title', landedLabel(entry.streamNewAt)));
+    var start = el('button','cw-inline-btn','▶ Start watching');
+    on(start, 'click', function(ev){
+      ev.stopPropagation();
+      moveStatus(entry, 'watching');
+      notice('Moved to Watching.');
+    });
+    mid.appendChild(start);
+    card.appendChild(mid);
+    on(card, 'click', function(){ openDetail(entry); });
+    row.appendChild(card);
+  });
+  app.appendChild(row);
 }
 
 function renderContinueWatching(){
@@ -1685,7 +2050,7 @@ function removeBtn(entry){
 }
 function removeEntry(entry){
   var idx = lib.indexOf(entry);
-  if(idx>=0){ lib.splice(idx,1); saveLib(); }
+  if(idx>=0){ lib.splice(idx,1); tombstone(entry); saveLib(); }
   notice('Removed "'+entry.title+'".');
   if(state.view==='detail'){ goHome(); }
   else{ rerender(); }
@@ -1693,7 +2058,7 @@ function removeEntry(entry){
 function moveStatus(entry, status){
   entry.status = status;
   if(status==='watching'){ entry.finishedAt = null; entry.lastWatchedAt = Date.now(); }
-  saveLib();
+  saveLib(entry);
   state.tab = status;
   rerender();
 }
@@ -2567,7 +2932,7 @@ function seasonBlock(entry, season){
         if(target) entry.watched[k] = true; else delete entry.watched[k];
       }
       if(target) entry.lastWatchedAt = Date.now();
-      saveLib();
+      saveLib(entry);
       maybeFinishPrompt(entry);
       rerender();
     };
@@ -2614,7 +2979,7 @@ function seasonBlock(entry, season){
         if(nowSeen) entry.lastWatchedAt = Date.now();
         row2.classList.toggle('seen', nowSeen);
         cb.textContent = nowSeen ? '✓' : '';
-        saveLib();
+        saveLib(entry);
         refreshHeader();
         if(nowSeen) maybeFinishPrompt(entry);
       }
@@ -2665,7 +3030,7 @@ function setEpRating(entry, key, val){
   if(!entry.epRatings) entry.epRatings = {};
   if(val > 0){ entry.epRatings[key] = val; }
   else{ delete entry.epRatings[key]; }
-  saveLib();
+  saveLib(entry);
 }
 function seasonAvgRating(entry, season){
   var r = entry.epRatings || {}; var sum = 0, n = 0;
@@ -2745,7 +3110,7 @@ function renderRateBox(container, entry){
     if(entry.status!=='finished'){ entry.status='finished'; entry.finishedAt = Date.now(); state.tab='finished'; }
     if(!entry.finishedAt) entry.finishedAt = Date.now();
     delete entry._rating;
-    saveLib();
+    saveLib(entry);
     notice('Ticket filed under Finished.');
     goHome();
   });
@@ -2763,7 +3128,7 @@ function renderRateBox(container, entry){
       entry.status='watching'; entry.finishedAt=null; delete entry._rating;
       entry.lastWatchedAt = Date.now();
       if(entry.type==='tv') entry.watched = {}; // fresh episode progress for the rewatch
-      saveLib(); state.tab='watching';
+      saveLib(entry); state.tab='watching';
       notice('Back in Watching — screening #' + (entry.history.length+1) + '.');
       goHome();
     });
@@ -2802,11 +3167,16 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
 }
 cred = loadCred();
 omdbKey = loadOmdbKey();
+tombs = loadTombs();
+loadSyncCreds();
+backfillStamps();
 if(!cred){
   renderSetup(false);
 }else{
   renderHome();
-  refreshAllProviders();
+  // pull any changes made on another device first, then look for new arrivals
+  (syncConnected() ? syncNow(true) : Promise.resolve(false))
+    .then(function(){ refreshAllProviders(); });
 }
 
 })();
