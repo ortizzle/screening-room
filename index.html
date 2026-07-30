@@ -478,7 +478,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.3 · Backup & Arrivals';
+var APP_VERSION = 'v2.4 · Rewatches Last';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1841,8 +1841,14 @@ var WAIT_VIEWS = [
   {key:'soon',      label:'Coming soon', bucket:1},
   {key:'streaming', label:'Streaming',   bucket:2}
 ];
+var REWATCH_TAG = 'Rewatch';
+function isRewatch(entry){ return entryHasTag(entry, REWATCH_TAG); }
 function sortWishlist(items){
   items.sort(function(a,b){
+    // a rewatch is something already seen — it sinks below everything you
+    // haven't, so new titles are never crowded out of the top of the list
+    var ra = isRewatch(a) ? 1 : 0, rb = isRewatch(b) ? 1 : 0;
+    if(ra !== rb) return ra - rb;
     var ba = wishlistBucket(a), bb = wishlistBucket(b);
     if(ba !== bb) return ba - bb;
     if(ba === 1) return a.releaseDate.localeCompare(b.releaseDate); // coming soon: soonest first
