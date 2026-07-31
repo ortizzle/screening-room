@@ -1,5 +1,5 @@
 /* Screening Room service worker — network-first app shell */
-var CACHE = 'sr-shell-v15'; // v2.4 · Rewatches Last
+var CACHE = 'sr-shell-v16'; // v2.5 · Rating Links
 
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(['./', './index.html']); }));
