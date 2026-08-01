@@ -538,7 +538,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.6 · Long Lists';
+var APP_VERSION = 'v2.7 · Backup Anywhere';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1005,11 +1005,11 @@ function renderSetup(isSettings){
     box.appendChild(el('div','divider'));
     var row = el('div','row');
 
-    var exportBtn = el('button','ghost-btn','Export library JSON');
+    var exportBtn = el('button','ghost-btn','Save a backup…');
     on(exportBtn, 'click', doExport);
     row.appendChild(exportBtn);
 
-    var importBtn = el('button','ghost-btn','Import library JSON');
+    var importBtn = el('button','ghost-btn','Restore from file');
     var fileInput = el('input'); fileInput.type='file'; fileInput.accept='application/json,.json'; fileInput.style.display='none';
     on(importBtn, 'click', function(){ fileInput.click(); });
     on(fileInput, 'change', function(){ if(fileInput.files && fileInput.files[0]) doImport(fileInput.files[0]); });
@@ -1204,15 +1204,36 @@ function renderSyncSettings(box){
   box.appendChild(sRow);
 }
 
+/* 'YYYY-MM-DD' in Arizona, so a late-night backup is stamped with the day
+   you actually made it */
+function azDateKey(ts){
+  try{
+    return new Intl.DateTimeFormat('en-CA',
+      {timeZone:'America/Phoenix', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date(ts));
+  }catch(e){ return ''; }
+}
 function doExport(){
   try{
+    var stamp = azDateKey(Date.now());
+    var name = 'screening-room-' + (stamp || 'backup') + '.json';
     var blob = new Blob([JSON.stringify(lib, null, 2)], {type:'application/json'});
-    var url = URL.createObjectURL(blob);
-    var a = el('a'); a.href = url; a.download = 'screening-room-backup.json';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-    notice('Exported ' + lib.length + ' titles.');
+    var n = lib.length + ' title' + (lib.length===1?'':'s');
+
+    // hand the file to the system share sheet where we can — that's the route
+    // to Google Drive, Files, iCloud, Mail, anywhere — same pattern the ticket
+    // and report images already use. Plain download is the fallback.
+    var file = null;
+    try{ file = new File([blob], name, {type:'application/json'}); }catch(e){}
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:'Screening Room backup'})
+        .then(function(){ notice('Backup ready — ' + n + '.'); })
+        .catch(function(err){
+          if(!err || err.name !== 'AbortError'){ downloadBlob(blob, name); notice('Saved to downloads.'); }
+        });
+      return;
+    }
+    downloadBlob(blob, name);
+    notice('Exported ' + n + '.');
   }catch(e){ notice('Export failed.'); }
 }
 function doImport(file){
