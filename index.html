@@ -198,6 +198,47 @@ a.chip:hover{filter:brightness(1.2)}
 }
 .arrival-line{font-size:12px;color:var(--green);margin-top:3px;font-weight:700;letter-spacing:.5px}
 
+/* search your own library */
+.libsearch{position:relative;margin:0 0 16px}
+.libsearch input{
+  width:100%;background:var(--card-2);border:1px solid var(--line);border-radius:99px;
+  padding:11px 44px 11px 40px;color:var(--cream);font:inherit;
+  font-size:16px; /* 16px keeps iOS from zooming the page on focus */
+  min-height:44px;-webkit-appearance:none;
+}
+.libsearch input::placeholder{color:var(--dim)}
+.libsearch input:focus{outline:none;border-color:var(--gold)}
+.libsearch input::-webkit-search-decoration,
+.libsearch input::-webkit-search-cancel-button{-webkit-appearance:none}
+.libsearch .mag{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;pointer-events:none}
+.libsearch .clr{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  background:transparent;border:0;color:var(--dim);font-size:15px;padding:0 14px;
+  min-height:44px;line-height:44px;
+}
+.libsearch .clr:hover{color:var(--gold)}
+
+/* Finished, filed by year — each year reads as a programme heading */
+.year-head{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  border:0;padding:20px 2px 12px;min-height:44px;color:var(--gold);
+  /* the year you're scrolling through stays put, so the index is always
+     one tap away no matter how deep the year runs */
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(180deg,var(--velvet) 62%,rgba(28,20,20,.92) 88%,transparent);
+}
+.year-head .year-num{
+  font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 78;
+  font-weight:800;font-size:22px;letter-spacing:1px;line-height:1;
+}
+.year-head .year-rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(217,164,65,.45),transparent)}
+.year-head .year-count{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.year-head .year-chev{font-size:11px;color:var(--dim);width:12px;text-align:center}
+.year-head:hover .year-num{filter:brightness(1.15)}
+.year-head:not(.open) .year-num{color:var(--dim)}
+
+.more-wrap{display:flex;justify-content:center;margin:20px 0 4px}
+
 /* settings → backup & sync */
 .sync-status{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:6px 0 12px}
 .sync-status b{color:var(--cream);font-size:14px}
@@ -497,7 +538,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.5 · Rating Links';
+var APP_VERSION = 'v2.6 · Long Lists';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -878,7 +919,14 @@ function notice(text){
 }
 
 /* ---------- view state ---------- */
-var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false, tagFilter:null, waitView:'all' }; // detail: {type,id}
+var state = { view:'home', tab:'watching', detail:null, finSort:'new', finRec:false, tagFilter:null, waitView:'all',
+              q:'', openYears:null, shown:0 }; // detail: {type,id}
+
+/* long lists: render a window of items and grow it, so a few hundred posters
+   never hit the DOM at once (mobile Safari gets janky well before that) */
+var PAGE = 36;
+var SEARCH_MIN = 12; // a search field only earns its space past this many items
+function resetWindow(){ state.shown = PAGE; }
 
 /* ========================================================= */
 /* SETUP / SETTINGS SCREEN                                    */
@@ -1852,7 +1900,8 @@ function renderTabs(){
     var b = el('button','tab' + (state.tab===t[0]?' active':''));
     b.appendChild(document.createTextNode(t[1]));
     b.appendChild(el('span','count', String(counts[t[0]])));
-    on(b, 'click', function(){ state.tab = t[0]; state.tagFilter = null; state.waitView = 'all'; rerender(); });
+    on(b, 'click', function(){ state.tab = t[0]; state.tagFilter = null; state.waitView = 'all';
+      state.q = ''; state.openYears = null; resetWindow(); rerender(); });
     tabs.appendChild(b);
   });
   app.appendChild(tabs);
@@ -1902,63 +1951,154 @@ function waitViewBar(items){
   var bar = el('div','sortbar');
   var seg = el('div','seg');
   var allChip = el('button','sort-chip' + (state.waitView==='all'?' active':''), 'All');
-  on(allChip, 'click', function(){ state.waitView = 'all'; rerender(); });
+  on(allChip, 'click', function(){ state.waitView = 'all'; resetWindow(); rerender(); });
   seg.appendChild(allChip);
   avail.forEach(function(v){
     var c = el('button','sort-chip' + (state.waitView===v.key?' active':''), v.label);
-    on(c, 'click', function(){ state.waitView = (state.waitView===v.key) ? 'all' : v.key; rerender(); });
+    on(c, 'click', function(){ state.waitView = (state.waitView===v.key) ? 'all' : v.key; resetWindow(); rerender(); });
     seg.appendChild(c);
   });
   bar.appendChild(seg);
   return bar;
 }
 
-function renderPane(){
-  var items = lib.filter(function(e){ return e.status === state.tab; });
-  if(!items.length){ app.appendChild(emptyState(state.tab)); return; }
-
-  var tagBar = tagFilterBar(items);
-
-  if(state.tab === 'finished'){
-    app.appendChild(finishedSortBar());
-    if(tagBar) app.appendChild(tagBar);
-    if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
-    if(state.finRec){ items = items.filter(function(e){ return e.recommend === true; }); }
-    if(state.finSort === 'top'){
-      items.sort(function(a,b){ return (b.rating||0)-(a.rating||0) || (b.finishedAt||0)-(a.finishedAt||0); });
-    }else if(state.finSort === 'az'){
-      items.sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
-    }else{
-      items.sort(function(a,b){ return (b.finishedAt||0)-(a.finishedAt||0); });
-    }
-    if(!items.length){
-      if(state.finRec && !state.tagFilter){
-        var e2 = el('div','empty');
-        e2.appendChild(el('b', null, 'No recommended tickets yet.'));
-        e2.appendChild(el('div','', 'Turn a review’s Recommend toggle on and it will show up here.'));
-        app.appendChild(e2);
-      }else{
-        app.appendChild(filteredEmpty());
-      }
-      return;
-    }
-    items.forEach(function(e){ app.appendChild(ticketCard(e)); });
-    app.appendChild(listShareBtn(items));
-    return;
+/* year of a timestamp in Arizona, so a New Year's Eve screening files
+   under the year you actually watched it */
+function azYear(ts){
+  try{
+    return parseInt(new Intl.DateTimeFormat('en-CA',
+      {timeZone:'America/Phoenix', year:'numeric'}).format(new Date(ts)), 10);
+  }catch(e){ return new Date(ts).getFullYear(); }
+}
+function matchesQuery(entry, q){
+  if(!q) return true;
+  var hay = [entry.title||'', entry.director||'', entry.year||'',
+             (entry.tags||[]).join(' '), (entry.genres||[]).join(' ')].join(' ').toLowerCase();
+  return hay.indexOf(q) !== -1;
+}
+function sortFinished(items){
+  if(state.finSort === 'top'){
+    items.sort(function(a,b){ return (b.rating||0)-(a.rating||0) || (b.finishedAt||0)-(a.finishedAt||0); });
+  }else if(state.finSort === 'az'){
+    items.sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
+  }else{
+    items.sort(function(a,b){ return (b.finishedAt||0)-(a.finishedAt||0); });
   }
+  return items;
+}
+/* items arrive newest-first, so first-seen order is newest year first */
+function groupByYear(items){
+  var map = {}, order = [];
+  items.forEach(function(e){
+    var key = e.finishedAt ? azYear(e.finishedAt) : 'Undated';
+    if(!map[key]){ map[key] = {year:key, items:[]}; order.push(key); }
+    map[key].items.push(e);
+  });
+  return order.map(function(k){ return map[k]; });
+}
+/* open the newest year the first time a given set of years is seen, but never
+   override a year the user has explicitly opened or closed */
+function ensureOpenYears(groups){
+  if(!state.openYears) state.openYears = {};
+  var known = groups.some(function(g){ return state.openYears.hasOwnProperty(g.year); });
+  if(!known && groups.length) state.openYears[groups[0].year] = true;
+}
+function yearHeader(group, open, onToggle){
+  var h = el('button','year-head' + (open ? ' open' : ''));
+  h.setAttribute('aria-expanded', open ? 'true' : 'false');
+  h.appendChild(el('span','year-num', String(group.year)));
+  h.appendChild(el('span','year-rule'));
+  h.appendChild(el('span','year-count', group.items.length + (group.items.length===1 ? ' ticket' : ' tickets')));
+  h.appendChild(el('span','year-chev', open ? '▾' : '▸'));
+  on(h, 'click', onToggle);
+  return h;
+}
+function librarySearchBar(count, repaint){
+  var wrap = el('div','libsearch');
+  wrap.appendChild(el('span','mag','🔍'));
+  var input = el('input');
+  input.type = 'search';
+  input.autocomplete = 'off'; input.spellcheck = false;
+  input.placeholder = 'Search ' + count + (state.tab === 'finished' ? ' tickets…' : ' titles…');
+  input.value = state.q || '';
+  var clr = el('button','clr','✕');
+  clr.style.display = state.q ? 'block' : 'none';
+  on(input, 'input', function(){
+    state.q = input.value;
+    clr.style.display = state.q ? 'block' : 'none';
+    resetWindow();
+    repaint(); // repaint results only — never rebuild the field you're typing in
+  });
+  on(clr, 'click', function(){
+    state.q = ''; input.value = ''; clr.style.display = 'none';
+    resetWindow(); repaint(); input.focus();
+  });
+  wrap.appendChild(input);
+  wrap.appendChild(clr);
+  return wrap;
+}
+function appendMore(container, total, shownCount, repaint){
+  if(shownCount >= total) return;
+  var left = total - shownCount;
+  var wrap = el('div','more-wrap');
+  var b = el('button','ghost-btn','Show ' + Math.min(PAGE, left) + ' more · ' + left + ' left');
+  on(b, 'click', function(){ state.shown += PAGE; repaint(); });
+  wrap.appendChild(b);
+  container.appendChild(wrap);
+  // and pull the next page in automatically as it comes into view
+  if(window.IntersectionObserver){
+    var io = new IntersectionObserver(function(entries){
+      if(entries[0] && entries[0].isIntersecting){
+        io.disconnect();
+        state.shown += PAGE;
+        repaint();
+      }
+    }, {rootMargin:'500px'});
+    io.observe(wrap);
+  }
+}
+function searchEmpty(q){
+  var e = el('div','empty');
+  e.appendChild(el('b', null, 'Nothing matches “' + q + '”.'));
+  e.appendChild(el('div','', 'Try fewer letters, or clear the search to see everything again.'));
+  return e;
+}
 
+function renderPane(){
+  var all = lib.filter(function(e){ return e.status === state.tab; });
+  if(!all.length){ app.appendChild(emptyState(state.tab)); return; }
+  if(!state.shown) resetWindow();
+
+  // the bars are built from the whole tab, so chips don't vanish as you type
+  if(state.tab === 'finished') app.appendChild(finishedSortBar());
   if(state.tab === 'wishlist'){
-    var viewBar = waitViewBar(items);
+    var viewBar = waitViewBar(all);
     if(viewBar) app.appendChild(viewBar);
     else state.waitView = 'all'; // bar hidden → never filter into emptiness
   }
-
+  var tagBar = tagFilterBar(all);
   if(tagBar) app.appendChild(tagBar);
+
+  var results = el('div','pane-results');
+  var repaint = function(){ paintResults(results, all, repaint); };
+
+  if(all.length >= SEARCH_MIN) app.appendChild(librarySearchBar(all.length, repaint));
+  app.appendChild(results);
+  repaint();
+}
+
+function paintResults(container, all, repaint){
+  clear(container);
+  var q = (state.q || '').trim().toLowerCase();
+  var items = all.filter(function(e){ return matchesQuery(e, q); });
   if(state.tagFilter){ items = items.filter(function(e){ return entryHasTag(e, state.tagFilter); }); }
 
-  if(state.tab === 'watching'){ items.sort(byLastWatched); }
-
-  if(state.tab === 'wishlist'){
+  if(state.tab === 'finished'){
+    if(state.finRec){ items = items.filter(function(e){ return e.recommend === true; }); }
+    sortFinished(items);
+  }else if(state.tab === 'watching'){
+    items.sort(byLastWatched);
+  }else if(state.tab === 'wishlist'){
     if(state.waitView !== 'all'){
       var want = {theaters:0, soon:1, streaming:2}[state.waitView];
       items = items.filter(function(e){ return wishlistBucket(e) === want; });
@@ -1967,12 +2107,62 @@ function renderPane(){
     sortWishlist(items);
   }
 
-  if(!items.length){ app.appendChild(filteredEmpty()); return; }
+  if(!items.length){
+    if(q) container.appendChild(searchEmpty(q));
+    else if(state.tab === 'finished' && state.finRec && !state.tagFilter){
+      var e2 = el('div','empty');
+      e2.appendChild(el('b', null, 'No recommended tickets yet.'));
+      e2.appendChild(el('div','', 'Turn a review’s Recommend toggle on and it will show up here.'));
+      container.appendChild(e2);
+    }else{
+      container.appendChild(filteredEmpty());
+    }
+    return;
+  }
 
+  if(state.tab === 'finished') paintTickets(container, items, q, repaint);
+  else paintGrid(container, items, repaint);
+  container.appendChild(listShareBtn(items)); // shares the whole filtered list, not just what's on screen
+}
+
+function paintGrid(container, items, repaint){
+  var slice = items.slice(0, state.shown);
   var grid = el('div','grid');
-  items.forEach(function(e){ grid.appendChild(titleCard(e)); });
-  app.appendChild(grid);
-  app.appendChild(listShareBtn(items));
+  slice.forEach(function(e){ grid.appendChild(titleCard(e)); });
+  container.appendChild(grid);
+  appendMore(container, items.length, slice.length, repaint);
+}
+
+/* Finished is the tab that grows forever, so under Newest it files into
+   collapsible years — one short index instead of one endless column. */
+function paintTickets(container, items, q, repaint){
+  var groups = (state.finSort === 'new') ? groupByYear(items) : null;
+  if(!groups || groups.length < 2){ // one year (or a non-chronological sort) needs no index
+    var slice = items.slice(0, state.shown);
+    slice.forEach(function(e){ container.appendChild(ticketCard(e)); });
+    appendMore(container, items.length, slice.length, repaint);
+    return;
+  }
+  ensureOpenYears(groups);
+  var used = 0, remaining = 0;
+  groups.forEach(function(g){
+    var open = !!q || !!state.openYears[g.year]; // a search opens every year it hit
+    // headers always render — they're the index, and they're cheap
+    container.appendChild(yearHeader(g, open, function(){
+      var nowOpen = !state.openYears[g.year];
+      state.openYears[g.year] = nowOpen;
+      // opening a year makes room to actually show it; closing one never
+      // yanks away tickets already on screen elsewhere
+      if(nowOpen) state.shown += PAGE;
+      repaint();
+    }));
+    if(!open) return;
+    g.items.forEach(function(e){
+      if(used < state.shown){ container.appendChild(ticketCard(e)); used++; }
+      else remaining++;
+    });
+  });
+  appendMore(container, used + remaining, used, repaint);
 }
 
 function tagFilterBar(items){
@@ -1988,7 +2178,7 @@ function tagFilterBar(items){
   var bar = el('div','sortbar');
   tags.forEach(function(tag){
     var b = el('button','sort-chip tagf' + (state.tagFilter===tag?' active':''), tag);
-    on(b, 'click', function(){ state.tagFilter = (state.tagFilter===tag) ? null : tag; rerender(); });
+    on(b, 'click', function(){ state.tagFilter = (state.tagFilter===tag) ? null : tag; resetWindow(); rerender(); });
     bar.appendChild(b);
   });
   return bar;
@@ -2008,12 +2198,12 @@ function finishedSortBar(){
   var seg = el('div','seg');
   [['new','Newest'],['top','Top rated'],['az','A–Z']].forEach(function(s){
     var b = el('button','sort-chip' + (state.finSort===s[0]?' active':''), s[1]);
-    on(b, 'click', function(){ state.finSort = s[0]; rerender(); });
+    on(b, 'click', function(){ state.finSort = s[0]; resetWindow(); rerender(); });
     seg.appendChild(b);
   });
   bar.appendChild(seg);
   var rec = el('button','sort-chip' + (state.finRec?' active':''), '👍 Recommended');
-  on(rec, 'click', function(){ state.finRec = !state.finRec; rerender(); });
+  on(rec, 'click', function(){ state.finRec = !state.finRec; resetWindow(); rerender(); });
   bar.appendChild(rec);
   return bar;
 }
