@@ -270,6 +270,7 @@ a.chip:hover{filter:brightness(1.2)}
 .sync-warn-inline.warn{background:rgba(217,164,65,.11);border-color:rgba(217,164,65,.5)}
 .sync-warn-inline b{color:var(--cream);font-size:13px}
 .sync-warn-inline div{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.45}
+.dig-row{margin-top:12px}
 .sort-chip.tagf:hover{border-color:var(--gold)}
 .sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
 
@@ -566,7 +567,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v3.2 · Loud Backups';
+var APP_VERSION = 'v3.3 · History Dig';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -954,6 +955,31 @@ function restoreFromBackup(info){
   saveTombs();
   persistLib();
   return added;
+}
+
+/* The scan above reads each gist's current contents. This goes further and
+   walks every stored revision, for the case where a backup was once richer
+   than it ended up — the only place left to look once the gists all match. */
+function richestRevision(id, cap){
+  return gh('/gists/' + id).then(function(g){
+    var vers = (g.history || []).map(function(h){ return h.version; }).slice(0, cap || 15);
+    return vers.reduce(function(chain, sha){
+      return chain.then(function(best){
+        return gh('/gists/' + id + '/' + sha)
+          .then(function(rev){ return parseBackupFile(rev, id, sha); })
+          .then(function(r){ return (r && (!best || r.count > best.count)) ? r : best; })
+          .catch(function(){ return best; });
+      });
+    }, Promise.resolve(null));
+  }).catch(function(){ return null; });
+}
+function digHistory(){
+  return listBackupGists().then(function(ids){
+    return Promise.all(ids.slice(0, SCAN_LIMIT).map(function(id){ return richestRevision(id); }));
+  }).then(function(reads){
+    return reads.filter(function(r){ return r && r.count > 0; })
+                .sort(function(a,b){ return b.count - a.count; });
+  });
 }
 
 function pushRemote(){
@@ -1465,6 +1491,7 @@ function renderBackupScan(box){
         row.appendChild(rb);
         wrap.appendChild(row);
       });
+      renderHistoryDig(wrap);
     }).catch(function(e){
       clear(wrap);
       var m = el('div','msg err'); m.textContent = syncErrMessage(e);
@@ -1473,6 +1500,54 @@ function renderBackupScan(box){
   });
   wrap.appendChild(scanBtn);
   box.appendChild(wrap);
+}
+
+/* Offered only after a scan, because it is slow: every revision of every
+   backup, to settle whether anything richer ever existed. */
+function renderHistoryDig(wrap){
+  var row = el('div','dig-row');
+  var btn = el('button','ghost-btn','Dig through revision history');
+  on(btn, 'click', function(){
+    btn.disabled = true;
+    btn.textContent = 'Reading every revision…';
+    digHistory().then(function(found){
+      clear(row);
+      var best = found.length ? found[0] : null;
+      if(!best || best.count <= lib.length){
+        var done = el('div','sub2');
+        done.textContent = best
+          ? 'Checked every stored revision. The richest ever held ' + best.count + ' title'
+            + (best.count===1?'':'s') + ', and you already have ' + lib.length
+            + '. Nothing further to recover from GitHub.'
+          : 'Checked every stored revision — nothing further to recover from GitHub.';
+        row.appendChild(done);
+        return;
+      }
+      row.appendChild(el('div','sub2','An older revision held more than your library does now.'));
+      var r2 = el('div','backup-row');
+      var info = el('div');
+      info.appendChild(el('b', null, best.count + ' titles'));
+      info.appendChild(el('div','sub2','gist ' + best.id.slice(0,8) + ' · earlier revision'));
+      r2.appendChild(info);
+      var rb = el('button','mark-btn','Restore');
+      on(rb, 'click', function(){
+        rb.disabled = true; rb.textContent = '…';
+        var added = restoreFromBackup(best);
+        syncNow(true).then(function(){
+          notice(added ? 'Restored ' + added + ' title' + (added===1?'':'s') + '.' : 'Those titles are already here.');
+          renderSetup(true);
+        });
+      });
+      r2.appendChild(rb);
+      row.appendChild(r2);
+    }).catch(function(e){
+      clear(row);
+      var m = el('div','msg err'); m.textContent = syncErrMessage(e);
+      row.appendChild(m);
+    });
+  });
+  row.appendChild(btn);
+  wrap.appendChild(row);
 }
 
 /* 'YYYY-MM-DD' in Arizona, so a late-night backup is stamped with the day
