@@ -242,6 +242,13 @@ a.chip:hover{filter:brightness(1.2)}
 /* settings → backup & sync */
 .sync-status{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:6px 0 12px}
 .sync-status b{color:var(--cream);font-size:14px}
+.backup-scan{margin-top:12px}
+.backup-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--card-2);border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;margin-top:8px;
+}
+.backup-row b{color:var(--cream);font-size:14px}
 .sort-chip.tagf:hover{border-color:var(--gold)}
 .sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
 
@@ -538,7 +545,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.8 · Token Help';
+var APP_VERSION = 'v2.9 · Backup Recovery';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -843,10 +850,69 @@ function applyMerge(remote){
 
   var cutoff = Date.now() - TOMB_TTL;
   Object.keys(tombs).forEach(function(k){ if(tombs[k] < cutoff) delete tombs[k]; });
+  // a tombstone the title has outlived is spent — drop it, or it rides along in
+  // every push and can suppress the title again later
+  out.forEach(function(e){
+    var k = entryKey(e.type, e.id);
+    if(tombs[k] && tombs[k] < (e.updatedAt || 0)) delete tombs[k];
+  });
 
   lib = out;
   saveTombs();
   persistLib(); // never saveLib() here — that would re-arm the sync timer forever
+}
+
+/* Every backup this app has ever written carries the same filename, so a
+   fresh token can find the previous backup instead of silently starting a
+   new, empty one and orphaning the old library. */
+function listBackupGists(){
+  return gh('/gists?per_page=100').then(function(list){
+    if(!Array.isArray(list)) return [];
+    return list.filter(function(g){ return g && g.files && g.files[GIST_FILE]; })
+               .map(function(g){ return g.id; });
+  });
+}
+function readBackup(id){
+  return gh('/gists/' + id).then(function(g){
+    var f = g.files && g.files[GIST_FILE];
+    if(!f) return null;
+    var text = (f.truncated && f.raw_url)
+      ? fetch(f.raw_url).then(function(r){ return r.text(); })
+      : Promise.resolve(f.content);
+    return Promise.resolve(text).then(function(t){
+      var d = null;
+      try{ d = JSON.parse(t || 'null'); }catch(e){}
+      var arr = (d && Array.isArray(d.lib)) ? d.lib : (Array.isArray(d) ? d : []);
+      return { id:id, count:arr.length, lib:arr, savedAt:(d && d.savedAt) || null };
+    });
+  }).catch(function(){ return null; });
+}
+/* read the candidates (capped — this runs on a phone) richest first */
+function scanBackups(){
+  return listBackupGists().then(function(ids){
+    return Promise.all(ids.slice(0, 6).map(readBackup));
+  }).then(function(reads){
+    return reads.filter(function(r){ return r && r.count > 0; })
+                .sort(function(a,b){ return b.count - a.count; });
+  });
+}
+/* Additive on purpose: a restore brings missing titles back and never
+   removes anything already on this device. */
+function restoreFromBackup(info){
+  var now = Date.now(), added = 0;
+  (info.lib || []).forEach(function(e){
+    if(!e || (e.type !== 'movie' && e.type !== 'tv') || e.id == null) return;
+    var k = entryKey(e.type, e.id);
+    if(tombs[k]){ delete tombs[k]; } // an old delete must not block a deliberate restore
+    if(!findEntry(e.type, e.id)){
+      e.updatedAt = now;             // fresh, so it wins the merge and pushes up
+      lib.push(e);
+      added++;
+    }
+  });
+  saveTombs();
+  persistLib();
+  return added;
 }
 
 function pushRemote(){
@@ -1183,15 +1249,21 @@ function renderSyncSettings(box){
       sShow('ok','Checking the token…');
       var prevToken = gistToken, prevId = gistId;
       gistToken = t; gistId = null;
+      var adopted = 0;
       verifyToken().then(function(){
-        return gh('/gists?per_page=1');
-      }).then(function(){
+        // adopt the richest backup already on this account rather than
+        // starting an empty one and stranding the old library
+        return scanBackups().catch(function(){ return []; });
+      }).then(function(found){
+        if(found.length){ gistId = found[0].id; adopted = found[0].count; }
         if(!saveSyncCreds()) throw new Error('STORE');
-        sShow('ok','Connected. Backing up your library…');
+        sShow('ok', adopted ? 'Found your earlier backup — restoring…' : 'Connected. Backing up your library…');
         return syncNow(true);
       }).then(function(ok){
         if(!ok) throw new Error('SYNC');
-        notice('Backup connected — ' + lib.length + ' title' + (lib.length===1?'':'s') + ' saved.');
+        notice(adopted
+          ? 'Reconnected to your backup — ' + lib.length + ' title' + (lib.length===1?'':'s') + ' in your library.'
+          : 'Backup connected — ' + lib.length + ' title' + (lib.length===1?'':'s') + ' saved.');
         renderSetup(true);
       }).catch(function(e){
         var wasStore = e && e.message === 'STORE';
@@ -1246,6 +1318,54 @@ function renderSyncSettings(box){
   sRow.appendChild(dis);
 
   box.appendChild(sRow);
+  renderBackupScan(box);
+}
+
+/* Recover a library from a backup the app isn't currently pointed at —
+   the case where a new token started a fresh gist and left the old one behind. */
+function renderBackupScan(box){
+  var wrap = el('div','backup-scan');
+  var scanBtn = el('button','ghost-btn','Find earlier backups…');
+  on(scanBtn, 'click', function(){
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Scanning your gists…';
+    scanBackups().then(function(found){
+      clear(wrap);
+      var others = found.filter(function(r){ return r.id !== gistId; });
+      if(!others.length){
+        wrap.appendChild(el('div','sub2','No other Screening Room backups on this account — the one you are connected to is the only one.'));
+        return;
+      }
+      wrap.appendChild(el('div','sub2','Restoring only adds titles back. It never removes anything already here.'));
+      others.forEach(function(r){
+        var row = el('div','backup-row');
+        var info = el('div');
+        info.appendChild(el('b', null, r.count + ' title' + (r.count===1?'':'s')));
+        var when = r.savedAt ? fmtDateTs(r.savedAt) : null;
+        info.appendChild(el('div','sub2','gist ' + r.id.slice(0,8) + (when ? ' · saved ' + when : '')));
+        row.appendChild(info);
+        var rb = el('button','mark-btn','Restore');
+        on(rb, 'click', function(){
+          rb.disabled = true; rb.textContent = '…';
+          var added = restoreFromBackup(r);
+          syncNow(true).then(function(){
+            notice(added
+              ? 'Restored ' + added + ' title' + (added===1?'':'s') + '.'
+              : 'Those titles are already in your library.');
+            renderSetup(true);
+          });
+        });
+        row.appendChild(rb);
+        wrap.appendChild(row);
+      });
+    }).catch(function(e){
+      clear(wrap);
+      var m = el('div','msg err'); m.textContent = syncErrMessage(e);
+      wrap.appendChild(m);
+    });
+  });
+  wrap.appendChild(scanBtn);
+  box.appendChild(wrap);
 }
 
 /* 'YYYY-MM-DD' in Arizona, so a late-night backup is stamped with the day
