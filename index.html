@@ -271,6 +271,12 @@ a.chip:hover{filter:brightness(1.2)}
 .sync-warn-inline b{color:var(--cream);font-size:13px}
 .sync-warn-inline div{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.45}
 .dig-row{margin-top:12px}
+
+/* settings → Google Drive copy + its one-tap nudge on home */
+.ortiz-drive .ghost-btn{display:block;width:100%;min-height:48px;margin-top:4px;text-align:center}
+.drive-hint{font-size:13px;color:var(--dim);line-height:1.6;margin-top:8px}
+.ortiz-drive .ortiz-drive-off{color:var(--dim)}
+.sync-warn.drive-bar{min-height:48px;justify-content:center;text-align:center;font-size:13px;font-weight:600}
 .sort-chip.tagf:hover{border-color:var(--gold)}
 .sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
 
@@ -562,12 +568,13 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 </head>
 <body>
 <div class="wrap" id="app"></div>
+<script src="ortiz-drive.js"></script>
 <script>
 "use strict";
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v3.3 · History Dig';
+var APP_VERSION = 'v3.4 · Drive Copy';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -676,6 +683,7 @@ function saveLib(entry){
   if(entry) entry.updatedAt = Date.now();
   persistLib();
   scheduleSync();
+  scheduleDriveCheck();
 }
 function loadMeta(){
   try{
@@ -1058,6 +1066,7 @@ function syncNow(silent){
       try{ localStorage.setItem(SYNCED_AT_STORE, String(syncedAt)); }catch(e){}
       clearSyncError();
       syncing = false;
+      if(Drive) Drive.check();
       if(!silent) notice('Backed up ' + lib.length + ' title' + (lib.length===1?'':'s') + ' to GitHub.');
       safeRerender();
       return true;
@@ -1259,6 +1268,7 @@ function renderSetup(isSettings){
     }
 
     box.appendChild(row);
+    if(Drive) box.appendChild(Drive.settingsBlock({ labelClass:'section-label', buttonClass:'ghost-btn', hintClass:'drive-hint' }));
 
     // optional OMDb key → Rotten Tomatoes / IMDb / Metacritic scores
     box.appendChild(el('div','divider'));
@@ -2061,6 +2071,7 @@ function rerender(){
     renderDetail();
   }else{
     renderSyncWarning();
+    renderDriveBar();
     renderNewArrivals();
     renderContinueWatching();
     renderTabs();
@@ -3775,6 +3786,39 @@ function renderRateBox(container, entry){
 }
 
 /* ========================================================= */
+/* GOOGLE DRIVE COPY (shared ortiz-drive.js)                 */
+/* ========================================================= */
+/* Guarded: offline, a missing ortiz-drive.js must never take the app down. */
+var Drive = window.OrtizDrive || null;
+var DRIVE_BAR_OPTS = { className: 'sync-warn warn drive-bar' };
+var driveTimer = null;
+
+/* Same shape as the gist file, so "Restore from file" takes it back. The
+   *CheckedAt stamps are dropped: they tick on every app open as TMDB/OMDb
+   refresh, and keeping them would raise the "changes since the last copy"
+   nudge every day with nothing actually changed. They're re-fetchable. */
+function driveData(){
+  var copy = JSON.parse(JSON.stringify({ v: 2, lib: lib, tombs: tombs }));
+  copy.lib.forEach(function(e){
+    delete e.providersCheckedAt;
+    delete e.trailerCheckedAt;
+    if(e.omdb) delete e.omdb.checkedAt;
+  });
+  return copy;
+}
+function scheduleDriveCheck(){
+  if(!Drive) return;
+  if(driveTimer) clearTimeout(driveTimer);
+  driveTimer = setTimeout(function(){ driveTimer = null; Drive.check(); }, SYNC_DEBOUNCE);
+}
+function renderDriveBar(){
+  if(!Drive) return;
+  var slot = el('div','drive-slot');
+  app.appendChild(slot);
+  Drive.mountBar(slot, DRIVE_BAR_OPTS);
+}
+
+/* ========================================================= */
 /* BOOT                                                      */
 /* ========================================================= */
 if('serviceWorker' in navigator && location.protocol === 'https:'){
@@ -3786,6 +3830,17 @@ tombs = loadTombs();
 loadSyncCreds();
 syncError = loadSyncError();
 backfillStamps();
+if(Drive){
+  Drive.init({
+    app: 'Screening Room', prefix: 'screening-room',
+    getData: driveData,
+    toast: notice,
+    onChange: function(){
+      var slot = document.querySelector('.drive-slot');
+      if(slot) Drive.mountBar(slot, DRIVE_BAR_OPTS);
+    }
+  });
+}
 if(!cred){
   renderSetup(false);
 }else{
