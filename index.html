@@ -545,7 +545,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v3.0 · Safe Restore';
+var APP_VERSION = 'v3.1 · Deep Scan';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -872,25 +872,45 @@ function listBackupGists(){
                .map(function(g){ return g.id; });
   });
 }
+function parseBackupFile(g, id, sha){
+  var f = g.files && g.files[GIST_FILE];
+  if(!f) return Promise.resolve(null);
+  var text = (f.truncated && f.raw_url)
+    ? fetch(f.raw_url).then(function(r){ return r.text(); })
+    : Promise.resolve(f.content);
+  return Promise.resolve(text).then(function(t){
+    var d = null;
+    try{ d = JSON.parse(t || 'null'); }catch(e){}
+    var arr = (d && Array.isArray(d.lib)) ? d.lib : (Array.isArray(d) ? d : []);
+    return { id:id, sha:sha || null, count:arr.length, lib:arr, savedAt:(d && d.savedAt) || null };
+  });
+}
 function readBackup(id){
   return gh('/gists/' + id).then(function(g){
-    var f = g.files && g.files[GIST_FILE];
-    if(!f) return null;
-    var text = (f.truncated && f.raw_url)
-      ? fetch(f.raw_url).then(function(r){ return r.text(); })
-      : Promise.resolve(f.content);
-    return Promise.resolve(text).then(function(t){
-      var d = null;
-      try{ d = JSON.parse(t || 'null'); }catch(e){}
-      var arr = (d && Array.isArray(d.lib)) ? d.lib : (Array.isArray(d) ? d : []);
-      return { id:id, count:arr.length, lib:arr, savedAt:(d && d.savedAt) || null };
+    return parseBackupFile(g, id).then(function(cur){
+      if(cur && cur.count > 0) return cur;
+      // Current content is empty — gists keep every past version, so walk back
+      // for the last revision that still held titles. This is what rescues a
+      // backup that got overwritten while the device was blank.
+      var vers = (g.history || []).map(function(h){ return h.version; }).slice(0, 10);
+      return vers.reduce(function(chain, sha){
+        return chain.then(function(found){
+          if(found && found.count > 0) return found;
+          return gh('/gists/' + id + '/' + sha)
+            .then(function(rev){ return parseBackupFile(rev, id, sha); })
+            .catch(function(){ return found; });
+        });
+      }, Promise.resolve(cur));
     });
   }).catch(function(){ return null; });
 }
-/* read the candidates (capped — this runs on a phone) richest first */
+/* GitHub lists gists most-recently-updated first, so a string of freshly
+   created ones can bury the real backup — read well past the first few. */
+var SCAN_LIMIT = 25;
 function scanBackups(){
   return listBackupGists().then(function(ids){
-    return Promise.all(ids.slice(0, 6).map(readBackup));
+    scanBackups.seen = ids.length;
+    return Promise.all(ids.slice(0, SCAN_LIMIT).map(readBackup));
   }).then(function(reads){
     return reads.filter(function(r){ return r && r.count > 0; })
                 .sort(function(a,b){ return b.count - a.count; });
@@ -1331,18 +1351,24 @@ function renderBackupScan(box){
     scanBtn.textContent = 'Scanning your gists…';
     scanBackups().then(function(found){
       clear(wrap);
-      var others = found.filter(function(r){ return r.id !== gistId; });
-      if(!others.length){
-        wrap.appendChild(el('div','sub2','No other Screening Room backups on this account — the one you are connected to is the only one.'));
+      if(!found.length){
+        wrap.appendChild(el('div','sub2','No Screening Room backups with any titles found on this account'
+          + (scanBackups.seen ? ' (looked at ' + scanBackups.seen + ' gist' + (scanBackups.seen===1?'':'s') + ')' : '') + '.'));
         return;
       }
-      wrap.appendChild(el('div','sub2','Restoring only adds titles back. It never removes anything already here.'));
-      others.forEach(function(r){
+      wrap.appendChild(el('div','sub2','Found ' + found.length + ' backup' + (found.length===1?'':'s')
+        + ' across ' + scanBackups.seen + ' gist' + (scanBackups.seen===1?'':'s')
+        + '. Restoring only adds titles back — it never removes anything already here.'));
+      found.forEach(function(r){
         var row = el('div','backup-row');
         var info = el('div');
         info.appendChild(el('b', null, r.count + ' title' + (r.count===1?'':'s')));
+        var bits = ['gist ' + r.id.slice(0,8)];
+        if(r.id === gistId) bits.push('in use now');
+        if(r.sha) bits.push('earlier revision');
         var when = r.savedAt ? fmtDateTs(r.savedAt) : null;
-        info.appendChild(el('div','sub2','gist ' + r.id.slice(0,8) + (when ? ' · saved ' + when : '')));
+        if(when) bits.push('saved ' + when);
+        info.appendChild(el('div','sub2', bits.join(' · ')));
         row.appendChild(info);
         var rb = el('button','mark-btn','Restore');
         on(rb, 'click', function(){
