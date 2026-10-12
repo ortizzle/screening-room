@@ -545,7 +545,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.9 · Backup Recovery';
+var APP_VERSION = 'v3.0 · Safe Restore';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -1413,13 +1413,21 @@ function doImport(file){
                (e.type === 'movie' || e.type === 'tv') && typeof e.title === 'string';
       });
       if(!valid.length) throw new Error('shape');
-      // a restore is the freshest truth: stamp it so it outranks any remote
-      // copy, and lift tombstones for the titles it brings back
-      var now = Date.now();
-      valid.forEach(function(e){ e.updatedAt = now; untombstone(e); });
-      lib = valid;
+      // Additive, like the gist restore: a restore fills gaps and never wipes
+      // what's on the device. Replacing was how an older file could quietly
+      // delete titles added since it was taken.
+      var now = Date.now(), added = 0, already = 0;
+      valid.forEach(function(e){
+        untombstone(e);                       // an old delete must not block a restore
+        if(findEntry(e.type, e.id)){ already++; return; } // keep the copy already here
+        e.updatedAt = now;                    // fresh, so it wins the merge and pushes up
+        lib.push(e);
+        added++;
+      });
       saveLib();
-      notice('Imported ' + lib.length + ' titles.');
+      notice(added
+        ? 'Restored ' + added + ' title' + (added===1?'':'s') + (already ? ' · ' + already + ' already here' : '') + '.'
+        : 'Everything in that file is already in your library.');
       renderHome();
     }catch(e){ notice('That file was not a valid Screening Room backup.'); }
   };
