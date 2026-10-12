@@ -1,8 +1,8 @@
 /* Screening Room service worker — network-first app shell */
-var CACHE = 'sr-shell-v24'; // v3.3 · History Dig
+var CACHE = 'sr-shell-v25'; // v3.4 · Drive Copy
 
 self.addEventListener('install', function(e){
-  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(['./', './index.html']); }));
+  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(['./', './index.html', './ortiz-drive.js']); }));
   self.skipWaiting();
 });
 
@@ -14,7 +14,7 @@ self.addEventListener('activate', function(e){
 });
 
 self.addEventListener('fetch', function(e){
-  // Only handle navigations to the app shell; TMDB/API traffic passes through untouched.
+  // Navigations to the app shell (and ortiz-drive.js below); TMDB/API traffic passes through untouched.
   if(e.request.mode === 'navigate'){
     e.respondWith(
       fetch(e.request).then(function(res){
@@ -23,6 +23,20 @@ self.addEventListener('fetch', function(e){
         return res;
       }).catch(function(){
         return caches.match('./index.html');
+      })
+    );
+    return;
+  }
+  // The Drive helper is the shell's one other local script: network-first too,
+  // with the cached copy so the app still opens offline.
+  var url = new URL(e.request.url);
+  if(url.origin === self.location.origin && url.pathname.slice(-15) === '/ortiz-drive.js'){
+    e.respondWith(
+      fetch(e.request).then(function(res){
+        if(res.ok){ var copy = res.clone(); caches.open(CACHE).then(function(c){ c.put('./ortiz-drive.js', copy); }); }
+        return res;
+      }).catch(function(){
+        return caches.match('./ortiz-drive.js');
       })
     );
   }
