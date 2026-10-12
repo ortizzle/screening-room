@@ -249,6 +249,27 @@ a.chip:hover{filter:brightness(1.2)}
   padding:10px 12px;margin-top:8px;
 }
 .backup-row b{color:var(--cream);font-size:14px}
+
+/* backup health: loud enough to notice, quiet enough to live with */
+.sync-warn{
+  display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+  margin:18px 0 0;padding:12px 14px;border-radius:12px;min-height:44px;
+  background:rgba(181,72,60,.13);border:1px solid rgba(181,72,60,.55);color:var(--cream);
+}
+.sync-warn.warn{background:rgba(217,164,65,.11);border-color:rgba(217,164,65,.5)}
+.sync-warn-icon{font-size:16px;color:var(--red);flex:none}
+.sync-warn.warn .sync-warn-icon{color:var(--gold)}
+.sync-warn-text{flex:1;min-width:0}
+.sync-warn-text b{font-size:13px;letter-spacing:.3px}
+.sync-warn-text div{font-size:12px;color:var(--dim);margin-top:2px;line-height:1.45}
+.sync-warn-go{font-size:12px;font-weight:700;color:var(--gold);flex:none}
+.sync-warn-inline{
+  background:rgba(181,72,60,.13);border:1px solid rgba(181,72,60,.55);
+  border-radius:12px;padding:12px 14px;margin:6px 0 10px;
+}
+.sync-warn-inline.warn{background:rgba(217,164,65,.11);border-color:rgba(217,164,65,.5)}
+.sync-warn-inline b{color:var(--cream);font-size:13px}
+.sync-warn-inline div{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.45}
 .sort-chip.tagf:hover{border-color:var(--gold)}
 .sort-chip.tagf.active{background:rgba(217,164,65,.14);border-color:var(--gold);color:var(--gold)}
 
@@ -545,7 +566,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v3.1 · Deep Scan';
+var APP_VERSION = 'v3.2 · Loud Backups';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -950,6 +971,56 @@ function pushRemote(){
   });
 }
 
+/* A backup that stops working must say so. Silent failures are how two
+   months of changes went unsaved with the app still reporting a cheerful
+   "Backed up ..." timestamp from before the token expired. */
+var SYNC_ERR_STORE = 'sr_sync_err';
+var STALE_DAYS = 3;
+var syncError = null; // {at, msg, auth}
+
+function loadSyncError(){
+  try{ var r = localStorage.getItem(SYNC_ERR_STORE); return r ? JSON.parse(r) : null; }
+  catch(e){ return null; }
+}
+function setSyncError(e){
+  var st = e && e.status;
+  syncError = { at: Date.now(), msg: syncErrMessage(e), auth: (st === 401 || st === 403) };
+  try{ localStorage.setItem(SYNC_ERR_STORE, JSON.stringify(syncError)); }catch(_){}
+}
+function clearSyncError(){
+  syncError = null;
+  try{ localStorage.removeItem(SYNC_ERR_STORE); }catch(e){}
+}
+/* null when healthy, else {level, msg}. An auth failure is called out at
+   once — it never heals itself — while a network blip only matters once
+   nothing has been saved for a few days. */
+function syncHealth(){
+  if(!syncConnected()) return null;
+  if(syncError && syncError.auth){
+    return { level:'bad', msg:'Backups have stopped. ' + syncError.msg };
+  }
+  var age = syncedAt ? (Date.now() - syncedAt) : Infinity;
+  if(age > STALE_DAYS * 864e5){
+    var when = syncedAt ? ('Nothing has been backed up since ' + (fmtDateTs(syncedAt) || 'a while ago') + '.')
+                        : 'Your library has never finished backing up.';
+    return { level: syncError ? 'bad' : 'warn', msg: when + (syncError ? ' ' + syncError.msg : '') };
+  }
+  return null;
+}
+function renderSyncWarning(){
+  var h = syncHealth();
+  if(!h) return;
+  var bar = el('button','sync-warn ' + h.level);
+  bar.appendChild(el('span','sync-warn-icon', h.level === 'bad' ? '⚠' : '◍'));
+  var txt = el('span','sync-warn-text');
+  txt.appendChild(el('b', null, h.level === 'bad' ? 'Backup problem' : 'Backup is falling behind'));
+  txt.appendChild(el('div','', h.msg));
+  bar.appendChild(txt);
+  bar.appendChild(el('span','sync-warn-go','Fix ›'));
+  on(bar, 'click', function(){ pushNav(); renderSetup(true); });
+  app.appendChild(bar);
+}
+
 function syncNow(silent){
   if(!syncConnected() || syncing) return Promise.resolve(false);
   syncing = true;
@@ -959,6 +1030,7 @@ function syncNow(silent){
     .then(function(){
       syncedAt = Date.now();
       try{ localStorage.setItem(SYNCED_AT_STORE, String(syncedAt)); }catch(e){}
+      clearSyncError();
       syncing = false;
       if(!silent) notice('Backed up ' + lib.length + ' title' + (lib.length===1?'':'s') + ' to GitHub.');
       safeRerender();
@@ -966,7 +1038,9 @@ function syncNow(silent){
     })
     .catch(function(e){
       syncing = false;
+      setSyncError(e);
       if(!silent) notice(syncErrMessage(e));
+      else safeRerender(); // a silent failure still has to show the warning bar
       return false;
     });
 }
@@ -1296,6 +1370,13 @@ function renderSyncSettings(box){
     return;
   }
 
+  var health = syncHealth();
+  if(health){
+    var warn = el('div','sync-warn-inline ' + health.level);
+    warn.appendChild(el('b', null, health.level === 'bad' ? '⚠ Backups have stopped' : '◍ Backup is falling behind'));
+    warn.appendChild(el('div','', health.msg));
+    box.appendChild(warn);
+  }
   var status = el('div','sync-status');
   status.appendChild(el('b', null, syncedAgoLabel()));
   status.appendChild(el('div','sub2', lib.length + ' title' + (lib.length===1?'':'s') + ' in this library'
@@ -1904,6 +1985,7 @@ function rerender(){
   if(state.view === 'detail'){
     renderDetail();
   }else{
+    renderSyncWarning();
     renderNewArrivals();
     renderContinueWatching();
     renderTabs();
@@ -3627,6 +3709,7 @@ cred = loadCred();
 omdbKey = loadOmdbKey();
 tombs = loadTombs();
 loadSyncCreds();
+syncError = loadSyncError();
 backfillStamps();
 if(!cred){
   renderSetup(false);
