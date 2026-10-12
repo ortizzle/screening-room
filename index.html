@@ -538,7 +538,7 @@ footer .ver{margin-top:6px;font-size:9px;letter-spacing:2px;color:var(--gold);op
 (function(){
 
 /* ---------- constants ---------- */
-var APP_VERSION = 'v2.7 · Backup Anywhere';
+var APP_VERSION = 'v2.8 · Token Help';
 var KEY_STORE = 'sr_tmdb_key';
 var LIB_STORE = 'sr_library_v1';
 var META_STORE = 'sr_meta_cache_v1';
@@ -740,7 +740,7 @@ function clearSync(){
   }catch(e){}
 }
 
-function gh(path, opts){
+function ghRaw(path, opts){
   opts = opts || {};
   var headers = {
     'Authorization': 'Bearer ' + gistToken,
@@ -749,16 +749,55 @@ function gh(path, opts){
   if(opts.body) headers['Content-Type'] = 'application/json';
   return fetch('https://api.github.com' + path, {
     method: opts.method || 'GET', headers: headers, body: opts.body || undefined
-  }).then(function(r){
+  });
+}
+function gh(path, opts){
+  return ghRaw(path, opts).then(function(r){
     if(!r.ok){ var err = new Error('GH_' + r.status); err.status = r.status; throw err; }
     return r.json();
   });
 }
+/* Problems we can spot from the token itself, before spending a round trip */
+function tokenShapeProblem(t){
+  if(t.indexOf('github_pat_') === 0){
+    return 'That’s a fine-grained token, and GitHub’s fine-grained tokens can’t reach gists at all. Use the link above to make a classic token with “gist” ticked.';
+  }
+  if(t.indexOf('ghp_') === 0 && t.length !== 40){
+    return 'That token looks cut short — ' + t.length + ' characters, where a classic token is 40. Copy it again using GitHub’s copy button.';
+  }
+  if(t.indexOf('ghp_') !== 0 && t.indexOf('github_pat_') !== 0){
+    return 'That doesn’t look like a GitHub token (they start with “ghp_”). Check you copied the token itself, not the page text around it.';
+  }
+  return null;
+}
+/* Tell the failure modes apart instead of blaming the scope every time:
+   /user accepts any valid token, so a 401 there means the credential itself
+   is bad, while a success lets us read which scopes it actually carries. */
+function verifyToken(){
+  return ghRaw('/user').then(function(r){
+    if(r.status === 401){
+      var e = new Error('BAD_TOKEN'); e.status = 401;
+      e.friendly = 'GitHub didn’t recognise that token. The usual cause is that it expired — GitHub defaults new tokens to 30 days — or it was revoked. Create a fresh one and paste it again.';
+      throw e;
+    }
+    if(!r.ok){ var e2 = new Error('GH_' + r.status); e2.status = r.status; throw e2; }
+    var scopes = r.headers.get('x-oauth-scopes'); // null if the browser can't see it
+    if(typeof scopes === 'string' && scopes.indexOf('gist') === -1){
+      var e3 = new Error('NO_SCOPE'); e3.status = 403;
+      e3.friendly = scopes.trim()
+        ? 'That token is valid but has no “gist” access — it only carries: ' + scopes + '. Make a new one with the “gist” box ticked.'
+        : 'That token is valid but carries no permissions. Make a new classic token with the “gist” box ticked.';
+      throw e3;
+    }
+    return true;
+  });
+}
 function syncErrMessage(e){
+  if(e && e.friendly) return e.friendly;
   var s = e && e.status;
-  if(s === 401) return 'GitHub rejected that token. Create a new one with “gist” access.';
+  if(s === 401) return 'GitHub didn’t recognise that token — it may have expired or been revoked. Create a fresh one with “gist” access.';
   if(s === 403) return 'GitHub refused (rate limited, or the token lacks “gist” access).';
-  if(s === 404) return 'That backup gist is gone. Clear the token in Settings and reconnect.';
+  if(s === 404) return 'That backup gist is gone. Disconnect in Settings and reconnect.';
   return 'Could not reach GitHub. Your library is safe on this device.';
 }
 
@@ -1113,11 +1152,11 @@ function renderSyncSettings(box){
 
   var blurb = el('p');
   blurb.appendChild(document.createTextNode('Keep a copy of your library in a private GitHub gist, so it survives a lost phone — and so the same library follows you to another device. Create a '));
-  var tl = el('a', null, 'token with gist access');
+  var tl = el('a', null, 'classic token with gist access');
   tl.href = 'https://github.com/settings/tokens/new?scopes=gist&description=Screening%20Room';
   tl.target = '_blank'; tl.rel = 'noopener'; tl.style.color = 'var(--gold)';
   blurb.appendChild(tl);
-  blurb.appendChild(document.createTextNode(', paste it below, and the app handles the rest. The token stays in this browser only.'));
+  blurb.appendChild(document.createTextNode(', paste it below, and the app handles the rest. Set the expiry to “No expiration” — GitHub defaults to 30 days, after which backups quietly stop. The token stays in this browser only.'));
   box.appendChild(blurb);
 
   var sMsg = el('div','msg');
@@ -1138,10 +1177,15 @@ function renderSyncSettings(box){
     on(sSave, 'click', function(){
       var t = sInput.value.trim();
       if(!t){ sShow('err','Paste your GitHub token first.'); return; }
+      var shape = tokenShapeProblem(t);
+      if(shape){ sShow('err', shape); return; } // caught without a round trip
       sSave.disabled = true;
       sShow('ok','Checking the token…');
+      var prevToken = gistToken, prevId = gistId;
       gistToken = t; gistId = null;
-      gh('/gists?per_page=1').then(function(){
+      verifyToken().then(function(){
+        return gh('/gists?per_page=1');
+      }).then(function(){
         if(!saveSyncCreds()) throw new Error('STORE');
         sShow('ok','Connected. Backing up your library…');
         return syncNow(true);
@@ -1151,7 +1195,7 @@ function renderSyncSettings(box){
         renderSetup(true);
       }).catch(function(e){
         var wasStore = e && e.message === 'STORE';
-        gistToken = null; gistId = null;
+        gistToken = prevToken; gistId = prevId; // a failed attempt never unhooks a working one
         sSave.disabled = false;
         sShow('err', wasStore ? 'Could not write to localStorage (private mode?).' : syncErrMessage(e));
       });
